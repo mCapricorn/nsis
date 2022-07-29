@@ -4,14 +4,13 @@
    Version 1.01e, February 12th, 2005
 
    Copyright (C) 1998-2005 Gilles Vollant
-   Unicode support by Jim Park -- 08/28/2007
 */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include <zlib.h>
+#include "zlib.h"
 #include "ioapi.h"
 
 
@@ -32,7 +31,7 @@
 
 voidpf ZCALLBACK fopen_file_func OF((
    voidpf opaque,
-   const TCHAR* filename,
+   const char* filename,
    int mode));
 
 uLong ZCALLBACK fread_file_func OF((
@@ -68,22 +67,22 @@ int ZCALLBACK ferror_file_func OF((
 
 voidpf ZCALLBACK fopen_file_func (opaque, filename, mode)
    voidpf opaque;
-   const TCHAR* filename;
+   const char* filename;
    int mode;
 {
     FILE* file = NULL;
-    const TCHAR* mode_fopen = NULL;
+    const char* mode_fopen = NULL;
     if ((mode & ZLIB_FILEFUNC_MODE_READWRITEFILTER)==ZLIB_FILEFUNC_MODE_READ)
-        mode_fopen = _T("rb");
+        mode_fopen = "rb";
     else
     if (mode & ZLIB_FILEFUNC_MODE_EXISTING)
-        mode_fopen = _T("r+b");
+        mode_fopen = "r+b";
     else
     if (mode & ZLIB_FILEFUNC_MODE_CREATE)
-        mode_fopen = _T("wb");
+        mode_fopen = "wb";
 
     if ((filename!=NULL) && (mode_fopen != NULL))
-        file = _tfopen(filename, mode_fopen);
+        file = fopen(filename, mode_fopen);
     return file;
 }
 

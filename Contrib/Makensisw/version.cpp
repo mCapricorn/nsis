@@ -1,7 +1,6 @@
 /* 
   Copyright (c) 2002 Robert Rainwater
-  Contributors: Justin Frankel, Fritz Elfert, Amir Szekely and
-                Jim Park (Unicode Support)
+  Contributors: Justin Frankel, Fritz Elfert, and Amir Szekely
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -19,14 +18,12 @@
      misrepresented as being the original software.
   3. This notice may not be removed or altered from any source distribution.
 
-  Unicode support by Jim Park -- 08/17/2007
 */
-#include "makensisw.h"
-#define TSTRINGIFY_(x) _T(#x)
-#define TSTRINGIFY(x) TSTRINGIFY_(x)
+#define REALSTR(x) #x
+#define STR(x) REALSTR(x)
 
 #ifdef RELEASE
-     const TCHAR *NSISW_VERSION = TSTRINGIFY(RELEASE);
+const char *NSISW_VERSION = "MakeNSISW " STR(RELEASE) " (NSIS Compiler Interface)";
 #else
-     const TCHAR *NSISW_VERSION = __TDATE__;
+const char *NSISW_VERSION = "MakeNSISW " __DATE__;
 #endif

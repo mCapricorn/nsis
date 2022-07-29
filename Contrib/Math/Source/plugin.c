@@ -1,5 +1,3 @@
-// Unicode support by Jim Park -- 08/22/2007
-
 #include <windows.h>
 #include "MyMath.h"
 #include "Math.h"
@@ -30,15 +28,15 @@ void watchGlobal()
     for (int i = 0; i < blocksnum; i++)
         if (blocks[i] != NULL)
         {
-            _RPT2(_CRT_WARN, _T("Memory leak %d at %8X\n"), i, blocks[i]);
+            _RPT2(_CRT_WARN, "Memory leak %d at %8X\n", i, blocks[i]);
         }
 }
 
 #endif
 
-TCHAR *AllocString()
+char *AllocString()
 {
-    return (TCHAR*) dbgGlobalAlloc(GPTR,g_stringsize*sizeof(TCHAR));
+    return (char*) dbgGlobalAlloc(GPTR,g_stringsize);
 }
 
 ExpressionItem *AllocItem()
@@ -84,7 +82,7 @@ ExpressionItem *CopyItem(ExpressionItem *citem, int NeedConst)
     if ((item->type & (ITEMTYPE | ITEMSUBTYPE)) == (IT_CONST | ITC_STRING))
     {
         item->param1 = (EIPARAM) AllocString();
-        lstrcpy((LPTSTR) item->param1, (LPTSTR) citem->param1);
+        lstrcpy((LPSTR) item->param1, (LPSTR) citem->param1);
     } else if (((item->type & (ITEMTYPE | ITEMSUBTYPE)) == (IT_CONST | ITC_ARRAY))
         ||
         ((item->type & (ITEMTYPE | ITEMSUBTYPE)) == (IT_VARIABLE | ITV_ARRITEM)))

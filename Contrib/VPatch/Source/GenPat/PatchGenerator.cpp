@@ -22,10 +22,7 @@
 // 2. Altered source versions must be plainly marked as such, and must not be
 //    misrepresented as being the original software.
 // 3. This notice may not be removed or altered from any source distribution.
-//
-// Unicode support by Jim Park -- 08/29/2007
 
-#include "tchar.h"
 #include "PatchGenerator.h"
 #include <algorithm>
 
@@ -88,14 +85,12 @@ void PatchGenerator::execute(vector<SameBlock*>& sameBlocks) {
       }
 
       // we need to update the memory cache of target
-      if (beVerbose) {
-        tout << _T("[CacheReload] File position = ") << static_cast<unsigned int>(targetCDataBaseOffset) << _T("\n");
-      }
+      cout << "[CacheReload] File position = " << static_cast<unsigned int>(targetCDataBaseOffset) << "\n";
 
       target.seekg(targetCDataBaseOffset,ios::beg);
       target.read(reinterpret_cast<char*>(targetCData),targetCDataSize);
     }
-    //tout << currentOffset << _T(" ");
+    //cout << currentOffset << " ";
 
     SameBlock* currentSameBlock = findBlock(sourceTree,currentOffset);
 
@@ -113,9 +108,9 @@ void PatchGenerator::execute(vector<SameBlock*>& sameBlocks) {
 
       // debug info
       if(beVerbose) {
-        tout << _T("Block found: ") << static_cast<unsigned int>(currentSameBlock->targetOffset)
-             << _T(" ") << static_cast<unsigned int>(currentSameBlock->size)
-             << _T(" (source offset=") << static_cast<unsigned int>(currentSameBlock->sourceOffset) << _T(")\n");
+        cout << "Block found: " << static_cast<unsigned int>(currentSameBlock->targetOffset)
+             << " " << static_cast<unsigned int>(currentSameBlock->size)
+             << " (source offset=" << static_cast<unsigned int>(currentSameBlock->sourceOffset) << ")\n";
       }
 
       currentOffset = currentSameBlock->targetOffset + currentSameBlock->size;
@@ -145,7 +140,7 @@ SameBlock* PatchGenerator::findBlock(ChunkedFile* sourceTree,
 //                                          currentOffset);
                                      //unsigned char* targetData,  // target data contains a memory part of target stream
                                      //TFileOffset targetDataPreSize, // this specifies how many bytes we can access in front (required to be at least blockSize)
-                                     //TFileOffset targetDataSize,    // this specifies how many bytes we can access in the pointer (must be at least blockSize)
+                                     //TFileOffset targetDataSize,    // this specifies how many bytes we can acces in the pointer (must be at least blockSize)
 
   // read the current data part into memory
   TChunkChecksum checksum;
@@ -177,8 +172,8 @@ SameBlock* PatchGenerator::findBlock(ChunkedFile* sourceTree,
     if(beVerbose) {
       if(maxMatches != 0) {
         if(matchCount == maxMatches) {
-          tout << _T("[FindBlock] Abort due to >") << static_cast<unsigned int>(maxMatches)
-               << _T(" matches; file position = ") << static_cast<unsigned int>(targetFileStartOffset) << _T("\n");
+          cout << "[FindBlock] Abort due to >" << static_cast<unsigned int>(maxMatches)
+               << " matches; file position = " << static_cast<unsigned int>(targetFileStartOffset) << "\n";
         }
       }
     }

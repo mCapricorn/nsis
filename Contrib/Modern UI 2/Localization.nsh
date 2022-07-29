@@ -11,8 +11,8 @@ Localization
 !macro MUI_LANGDLL_VARIABLES
 
   !ifdef MUI_LANGDLL_REGISTRY_ROOT & MUI_LANGDLL_REGISTRY_KEY & MUI_LANGDLL_REGISTRY_VALUENAME
-    !ifndef MUI_LANGDLL_REGISTRY_VARIABLES
-      !define MUI_LANGDLL_REGISTRY_VARIABLES
+    !ifndef MUI_LANGDLL_REGISTRY_VARAIBLES
+      !define MUI_LANGDLL_REGISTRY_VARAIBLES
 
       ;/GLOBAL because the macros are included in a function
       Var /GLOBAL mui.LangDLL.RegistryLanguage
@@ -24,44 +24,42 @@ Localization
 
 
 ;--------------------------------
-;Include language files
+;Include langauge files
 
-!macro MUI_LANGUAGEEX LangDir NLFID
+!macro MUI_LANGUAGE LANGUAGE
 
-  !verbose push ${MUI_VERBOSE}
+  ;Include a language
 
-  !ifndef MUI_PAGE_UNINSTALLER_PREFIX
-    !ifndef MUI_DISABLE_INSERT_LANGUAGE_AFTER_PAGES_WARNING ; Define this to avoid the warning if you only have custom pages
-      !warning "MUI_LANGUAGE[EX] should be inserted after the MUI_[UN]PAGE_* macros"
-    !endif
-  !endif
+  !verbose push
+  !verbose ${MUI_VERBOSE}
 
   !insertmacro MUI_INSERT
 
-  ;Include a language
-  LoadLanguageFile "${LangDir}\${NLFID}.nlf"
+  LoadLanguageFile "${NSISDIR}\Contrib\Language files\${LANGUAGE}.nlf"
 
-  ;Include MUI language file
-  !insertmacro LANGFILE_INCLUDE_WITHDEFAULT \
-    "${LangDir}\${NLFID}.nsh" "${NSISDIR}\Contrib\Language files\English.nsh"
+  ;Include language file
+  !insertmacro LANGFILE_INCLUDE_WITHDEFAULT "${NSISDIR}\Contrib\Language files\${LANGUAGE}.nsh" "${NSISDIR}\Contrib\Language files\English.nsh"
 
   ;Add language to list of languages for selection dialog
-  !define /ifndef MUI_LANGDLL_LANGUAGES ""
-  !define /redef MUI_LANGDLL_LANGUAGES \
-    `"${LANGFILE_${NLFID}_LANGDLL}" "${LANG_${NLFID}}" ${MUI_LANGDLL_LANGUAGES}`
-  !define /ifndef MUI_LANGDLL_LANGUAGES_CP ""
-  !define /redef MUI_LANGDLL_LANGUAGES_CP \
-    `"${LANGFILE_${NLFID}_LANGDLL}" "${LANG_${NLFID}}" "${LANG_${NLFID}_CP}" ${MUI_LANGDLL_LANGUAGES_CP}`
+  !ifndef MUI_LANGDLL_LANGUAGES
+    !define MUI_LANGDLL_LANGUAGES "'${LANGFILE_${LANGUAGE}_NAME}' '${LANG_${LANGUAGE}}' "
+    !define MUI_LANGDLL_LANGUAGES_CP "'${LANGFILE_${LANGUAGE}_NAME}' '${LANG_${LANGUAGE}}' '${LANG_${LANGUAGE}_CP}' "
+  !else
+    !ifdef MUI_LANGDLL_LANGUAGES_TEMP
+      !undef MUI_LANGDLL_LANGUAGES_TEMP
+    !endif
+    !define MUI_LANGDLL_LANGUAGES_TEMP "${MUI_LANGDLL_LANGUAGES}"
+    !undef MUI_LANGDLL_LANGUAGES
 
-  !verbose pop
+    !ifdef MUI_LANGDLL_LANGUAGES_CP_TEMP
+      !undef MUI_LANGDLL_LANGUAGES_CP_TEMP
+    !endif
+    !define MUI_LANGDLL_LANGUAGES_CP_TEMP "${MUI_LANGDLL_LANGUAGES_CP}"
+    !undef MUI_LANGDLL_LANGUAGES_CP
 
-!macroend
-
-!macro MUI_LANGUAGE NLFID
-
-  !verbose push ${MUI_VERBOSE}
-
-  !insertmacro MUI_LANGUAGEEX "${NSISDIR}\Contrib\Language files" "${NLFID}"
+    !define MUI_LANGDLL_LANGUAGES "'${LANGFILE_${LANGUAGE}_NAME}' '${LANG_${LANGUAGE}}' ${MUI_LANGDLL_LANGUAGES_TEMP}"
+    !define MUI_LANGDLL_LANGUAGES_CP "'${LANGFILE_${LANGUAGE}_NAME}' '${LANG_${LANGUAGE}}' '${LANG_${LANGUAGE}_CP}' ${MUI_LANGDLL_LANGUAGES_CP_TEMP}"
+  !endif
 
   !verbose pop
 
@@ -76,21 +74,17 @@ Localization
   !verbose push
   !verbose ${MUI_VERBOSE}
 
-  !ifndef MUI_LANGDLL_LANGUAGES
-    !warning "MUI_LANGDLL_DISPLAY should only be used after inserting the MUI_LANGUAGE macro(s)"
-  !endif
-
   !insertmacro MUI_LANGDLL_VARIABLES
 
   !insertmacro MUI_DEFAULT MUI_LANGDLL_WINDOWTITLE "Installer Language"
   !insertmacro MUI_DEFAULT MUI_LANGDLL_INFO "Please select a language."
 
-  !ifdef MUI_LANGDLL_REGISTRY_VARIABLES
+  !ifdef MUI_LANGDLL_REGISTRY_VARAIBLES
 
     ReadRegStr $mui.LangDLL.RegistryLanguage "${MUI_LANGDLL_REGISTRY_ROOT}" "${MUI_LANGDLL_REGISTRY_KEY}" "${MUI_LANGDLL_REGISTRY_VALUENAME}"
     
     ${if} $mui.LangDLL.RegistryLanguage != ""
-      ;Set default language to registry language
+      ;Set default langauge to registry language
       StrCpy $LANGUAGE $mui.LangDLL.RegistryLanguage
     ${endif}
 
@@ -101,12 +95,12 @@ Localization
   !endif
 
   !ifndef MUI_LANGDLL_ALWAYSSHOW
-  !ifdef MUI_LANGDLL_REGISTRY_VARIABLES
+  !ifdef MUI_LANGDLL_REGISTRY_VARAIBLES
     ${if} $mui.LangDLL.RegistryLanguage == ""
   !endif
   !endif
   
-  ;Show language selection dialog
+  ;Show langauge selection dialog
   !ifdef MUI_LANGDLL_ALLLANGUAGES
     LangDLL::LangDialog "${MUI_LANGDLL_WINDOWTITLE}" "${MUI_LANGDLL_INFO}" A ${MUI_LANGDLL_LANGUAGES} ""
   !else
@@ -119,7 +113,7 @@ Localization
     ${endif}
   
   !ifndef MUI_LANGDLL_ALWAYSSHOW
-  !ifdef MUI_LANGDLL_REGISTRY_VARIABLES
+  !ifdef MUI_LANGDLL_REGISTRY_VARAIBLES
     ${endif}
   !endif
   !endif
@@ -191,7 +185,7 @@ Localization
   !verbose push
   !verbose ${MUI_VERBOSE}
 
-  ReserveFile /plugin LangDLL.dll
+  ReserveFile "${NSISDIR}\Plugins\LangDLL.dll"
 
   !verbose pop
 

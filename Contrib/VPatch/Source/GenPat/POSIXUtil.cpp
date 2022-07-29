@@ -22,8 +22,6 @@
 // 2. Altered source versions must be plainly marked as such, and must not be
 //    misrepresented as being the original software.
 // 3. This notice may not be removed or altered from any source distribution.
-//
-// Unicode support by Jim Park -- 08/29/2007
 
 
 #include "POSIXUtil.h"
@@ -56,13 +54,13 @@ namespace POSIX {
 
 #ifdef __WIN32__
   /* do it the old way on Win32, because POSIX does not get timezone stuff right */
-  ALT_FILETIME getFileTime(const TCHAR* sFileName) {
+  ALT_FILETIME getFileTime(const char* sFileName) {
     FILETIME temp;
     GetSystemTimeAsFileTime(&temp);
     HANDLE h = CreateFile(sFileName, GENERIC_READ, FILE_SHARE_READ, NULL,
                             OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
     if (h == INVALID_HANDLE_VALUE) {
-      terr << _T("Cannot read file time of ") << sFileName << _T("\n");
+      cerr << "Cannot read file time of " << sFileName << "\n";
     } else {
       GetFileTime(h, NULL, NULL, &temp);
       CloseHandle(h);
@@ -79,7 +77,7 @@ namespace POSIX {
     time_t currentTime = time(NULL);
 
     if(stat(sFileName, &buf)) {
-      terr << _T("Cannot read file time of ") << sFileName << _T("\n");
+      cerr << "Cannot read file time of " << sFileName << "\n";
     } else {
       /* get the time from the file */
       currentTime = buf.st_mtime;
@@ -90,11 +88,11 @@ namespace POSIX {
   }
 #endif
 
-  uint32_t getFileSize(const TCHAR* sFileName) {
-    bifstream f;
+  uint32_t getFileSize(const char* sFileName) {
+    std::ifstream f;
     f.open(sFileName, std::ios_base::binary | std::ios_base::in);
     if (!f.good() || f.eof() || !f.is_open()) {
-      throw _T("File could not be read (getFileSize)");
+      throw "File could not be read (getFileSize)";
     }
     f.seekg(0, std::ios_base::beg);
     std::ifstream::pos_type begin_pos = f.tellg();
@@ -103,29 +101,29 @@ namespace POSIX {
   }
 
 #ifdef __WIN32__
-  tstring getTempFile() {
-    TCHAR buffer[MAX_PATH];
-    if(GetTempFileName(_T("."),_T("vpatch"),0,buffer) == 0) {
-      terr << _T("Cannot create temporary filename");
+  string getTempFile() {
+    char buffer[MAX_PATH];
+    if(GetTempFileName(".","vpatch",0,buffer) == 0) {
+      cerr << "Cannot create temporary filename";
     }
-    return tstring(buffer);
+    return string(buffer);
   }
 #else
-  tstring getTempFile() {
-    TCHAR t[] = _T("/tmp/genpatXXXXXX");
+  string getTempFile() {
+    char t[] = "/tmp/genpatXXXXXX";
 
     mode_t old_umask = umask(0077);
 
     int fd = mkstemp(t);
     if (fd == -1) {
-      terr << _T("Cannot create temporary filename");
-      return _T("");
+      cerr << "Cannot create temporary filename";
+      return "";
     }
     close(fd);
 
     umask(old_umask);
 
-    return tstring(t);
+    return string(t);
   }
 #endif
 

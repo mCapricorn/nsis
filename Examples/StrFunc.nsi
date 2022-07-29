@@ -32,29 +32,6 @@ ${UnStrTok}
 ${UnStrTrimNewLines}
 ${UnStrSort}
 
-
-Var SFPass
-Var SFTotl
-!macro EndStrFuncTestEx lbl name
-  IfErrors ${lbl}
-  DetailPrint "PASSED ${name} test"
-  IntOp $SFPass $SFPass + 1
-  IntOp $SFTotl $SFTotl + 1
-  Goto +3
-${lbl}:
-  DetailPrint "FAILED ${name} test"
-  IntOp $SFTotl $SFTotl + 1
-!macroend
-!macro EndStrFuncTest name
-  !insertmacro EndStrFuncTestEx "${name}error" "${name}"
-!macroend
-
-CompletedText "Passed $SFPass of $SFTotl tests"
-!macro CompletedAllTests
-  StrCmp $SFPass $SFTotl +2
-    SetErrorLevel 42
-!macroend
-
 !macro StackVerificationStart
   StrCpy $0 S0
   StrCpy $1 S1
@@ -126,13 +103,16 @@ Section
   ${StrCase} $0 "what about taking a shower tomorrow? it's late to do so now! try to sleep now. Good Night!" "S"
   StrCmp $0 "What about taking a shower tomorrow? It's late to do so now! Try to sleep now. Good night!" 0 strcaseerror
   !insertmacro StackVerificationEnd
-  !insertmacro EndStrFuncTest StrCase
+  IfErrors strcaseerror
+
+  DetailPrint "PASSED StrCase test"
+  Goto +2
+strcaseerror:
+  DetailPrint "FAILED StrCase test"
 
   # Test clipboard function
   !insertmacro StackVerificationStart
-  !verbose push 4
   ${StrClb} $0 "StrFunc clipboard test" ">"
-  !verbose pop
   StrCmp $0 "" 0 strclberror
   ${StrClb} $0 "StrFunc clipboard test #2" "<>"
   StrCmp $0 "StrFunc clipboard test" 0 strclberror
@@ -141,7 +121,12 @@ Section
   ${StrClb} $0 "" ""
   StrCmp $0 "" 0 strclberror
   !insertmacro StackVerificationEnd
-  !insertmacro EndStrFuncTest StrClb
+  IfErrors strclberror
+
+  DetailPrint "PASSED StrClb test"
+  Goto +2
+strclberror:
+  DetailPrint "FAILED StrClb test"
 
   # Test IO functions
   !insertmacro StackVerificationStart
@@ -159,8 +144,13 @@ Section
   !insertmacro testio ""
   !insertmacro testio " "
   !insertmacro StackVerificationEnd
-  !insertmacro EndStrFuncTestEx ioerror "StrNSISToIO/StrIOToNSIS"
- 
+  IfErrors ioerror
+
+  DetailPrint "PASSED StrNSISToIO/StrIOToNSIS test"
+  Goto +2
+ioerror:
+  DetailPrint "FAILED StrNSISToIO/StrIOToNSIS test"
+
   # Test string search functions
   !insertmacro StackVerificationStart
   ${StrLoc} $0 "This is just an example" "just" "<"
@@ -184,7 +174,12 @@ Section
   ${StrLoc} $0 abc d <
   StrCmp $0 "" 0 strlocerror
   !insertmacro StackVerificationEnd
-  !insertmacro EndStrFuncTest StrLoc
+  IfErrors strlocerror
+  
+  DetailPrint "PASSED StrLoc test"
+  Goto +2
+strlocerror:
+  DetailPrint "FAILED StrLoc test"
 
   # Test string replacement
   !insertmacro StackVerificationStart
@@ -203,7 +198,12 @@ Section
   ${StrRep} $0 "test" "" ""
   StrCmp $0 "test" 0 strreperror
   !insertmacro StackVerificationEnd
-  !insertmacro EndStrFuncTest StrRep
+  IfErrors strreperror
+  
+  DetailPrint "PASSED StrRep test"
+  Goto +2
+strreperror:
+  DetailPrint "FAILED StrRep test"
 
   # Test sorting
   !insertmacro StackVerificationStart
@@ -246,7 +246,12 @@ Section
   ${StrSort} $0 "" " " "something" " " "1" "0" "1"
   StrCmp $0 "" 0 strsorterror
   !insertmacro StackVerificationEnd
-  !insertmacro EndStrFuncTest StrSort
+  IfErrors strsorterror
+  
+  DetailPrint "PASSED StrSort test"
+  Goto +2
+strsorterror:
+  DetailPrint "FAILED StrSort test"
 
   !insertmacro StackVerificationStart
   ${StrStr} $0 "abcefghijklmnopqrstuvwxyz" "g"
@@ -258,7 +263,12 @@ Section
   ${StrStr} $0 "a" "abcefghijklmnopqrstuvwxyz"
   StrCmp $0 "" 0 strstrerror
   !insertmacro StackVerificationEnd
-  !insertmacro EndStrFuncTest StrStr
+  IfErrors strstrerror
+  
+  DetailPrint "PASSED StrStr test"
+  Goto +2
+strstrerror:
+  DetailPrint "FAILED StrStr test"
 
   !insertmacro StackVerificationStart
   ${StrStrAdv} $0 "abcabcabc" "a" ">" ">" "1" "0" "0"
@@ -302,7 +312,12 @@ Section
   ${StrStrAdv} $0 "ABCabcabc" "abc" "<" ">" "0" "1" "1"
   StrCmp $0 "abc" 0 strstradverror
   !insertmacro StackVerificationEnd
-  !insertmacro EndStrFuncTest StrStrAdv
+  IfErrors strstradverror
+  
+  DetailPrint "PASSED StrStrAdv test"
+  Goto +2
+strstradverror:
+  DetailPrint "FAILED StrStrAdv test"
 
   # Test tokenizer
   !insertmacro StackVerificationStart
@@ -319,20 +334,29 @@ Section
   ${StrTok} $0 "This is, or is not, just an example" " ," "0" "0"
   StrCmp $0 "This" 0 strtokerror
   !insertmacro StackVerificationEnd
-  !insertmacro EndStrFuncTest StrTok
+  IfErrors strtokerror
+  
+  DetailPrint "PASSED StrTok test"
+  Goto +2
+strtokerror:
+  DetailPrint "FAILED StrTok test"
 
   # Test trim new lines
   !insertmacro StackVerificationStart
   ${StrTrimNewLines} $0 "$\r$\ntest$\r$\ntest$\r$\n"
   StrCmp $0 "$\r$\ntest$\r$\ntest" 0 strtrimnewlineserror
   !insertmacro StackVerificationEnd
-  !insertmacro EndStrFuncTest StrTrimNewlines
+  IfErrors strtrimnewlineserror
 
-  InitPluginsDir
-  WriteUninstaller $PluginsDir\UnStrFunc.exe
-  ExecWait '"$PluginsDir\UnStrFunc.exe" _?=$PluginsDir'
+  DetailPrint "PASSED StrTrimNewLines test"
+  Goto +2
+strtrimnewlineserror:
+  DetailPrint "FAILED StrTrimNewLines test"
 
-  !insertmacro CompletedAllTests
+  WriteUninstaller $EXEDIR\UnStrFunc.exe
+  
+  Exec $EXEDIR\UnStrFunc.exe
+
 SectionEnd
 
 Section Uninstall
@@ -358,7 +382,12 @@ Section Uninstall
   ${UnStrCase} $0 "what about taking a shower tomorrow? it's late to do so now! try to sleep now. Good Night!" "S"
   StrCmp $0 "What about taking a shower tomorrow? It's late to do so now! Try to sleep now. Good night!" 0 strcaseerror
   !insertmacro StackVerificationEnd
-  !insertmacro EndStrFuncTest StrCase
+  IfErrors strcaseerror
+
+  DetailPrint "PASSED StrCase test"
+  Goto +2
+strcaseerror:
+  DetailPrint "FAILED StrCase test"
 
   # Test clipboard function
   !insertmacro StackVerificationStart
@@ -371,7 +400,12 @@ Section Uninstall
   ${UnStrClb} $0 "" ""
   StrCmp $0 "" 0 strclberror
   !insertmacro StackVerificationEnd
-  !insertmacro EndStrFuncTest StrClb
+  IfErrors strclberror
+
+  DetailPrint "PASSED StrClb test"
+  Goto +2
+strclberror:
+  DetailPrint "FAILED StrClb test"
 
   # Test IO functions
   !insertmacro StackVerificationStart
@@ -389,7 +423,12 @@ Section Uninstall
   !insertmacro untestio ""
   !insertmacro untestio " "
   !insertmacro StackVerificationEnd
-  !insertmacro EndStrFuncTestEx ioerror "StrNSISToIO/StrIOToNSIS"
+  IfErrors ioerror
+
+  DetailPrint "PASSED StrNSISToIO/StrIOToNSIS test"
+  Goto +2
+ioerror:
+  DetailPrint "FAILED StrNSISToIO/StrIOToNSIS test"
 
   # Test string search functions
   !insertmacro StackVerificationStart
@@ -414,7 +453,12 @@ Section Uninstall
   ${UnStrLoc} $0 abc d <
   StrCmp $0 "" 0 strlocerror
   !insertmacro StackVerificationEnd
-  !insertmacro EndStrFuncTest StrLoc
+  IfErrors strlocerror
+
+  DetailPrint "PASSED StrLoc test"
+  Goto +2
+strlocerror:
+  DetailPrint "FAILED StrLoc test"
 
   # Test string replacement
   !insertmacro StackVerificationStart
@@ -433,7 +477,12 @@ Section Uninstall
   ${UnStrRep} $0 "test" "" ""
   StrCmp $0 "test" 0 strreperror
   !insertmacro StackVerificationEnd
-  !insertmacro EndStrFuncTest StrRep
+  IfErrors strreperror
+
+  DetailPrint "PASSED StrRep test"
+  Goto +2
+strreperror:
+  DetailPrint "FAILED StrRep test"
 
   # Test sorting
   !insertmacro StackVerificationStart
@@ -476,7 +525,12 @@ Section Uninstall
   ${UnStrSort} $0 "" " " "something" " " "1" "0" "1"
   StrCmp $0 "" 0 strsorterror
   !insertmacro StackVerificationEnd
-  !insertmacro EndStrFuncTest StrSort
+  IfErrors strsorterror
+
+  DetailPrint "PASSED StrSort test"
+  Goto +2
+strsorterror:
+  DetailPrint "FAILED StrSort test"
 
   !insertmacro StackVerificationStart
   ${UnStrStr} $0 "abcefghijklmnopqrstuvwxyz" "g"
@@ -488,7 +542,12 @@ Section Uninstall
   ${UnStrStr} $0 "a" "abcefghijklmnopqrstuvwxyz"
   StrCmp $0 "" 0 strstrerror
   !insertmacro StackVerificationEnd
-  !insertmacro EndStrFuncTest StrStr
+  IfErrors strstrerror
+
+  DetailPrint "PASSED StrStr test"
+  Goto +2
+strstrerror:
+  DetailPrint "FAILED StrStr test"
 
   !insertmacro StackVerificationStart
   ${UnStrStrAdv} $0 "abcabcabc" "a" ">" ">" "1" "0" "0"
@@ -532,7 +591,12 @@ Section Uninstall
   ${UnStrStrAdv} $0 "ABCabcabc" "abc" "<" ">" "0" "1" "1"
   StrCmp $0 "abc" 0 strstradverror
   !insertmacro StackVerificationEnd
-  !insertmacro EndStrFuncTest StrStrAdv
+  IfErrors strstradverror
+
+  DetailPrint "PASSED StrStrAdv test"
+  Goto +2
+strstradverror:
+  DetailPrint "FAILED StrStrAdv test"
 
   # Test tokenizer
   !insertmacro StackVerificationStart
@@ -549,14 +613,23 @@ Section Uninstall
   ${UnStrTok} $0 "This is, or is not, just an example" " ," "0" "0"
   StrCmp $0 "This" 0 strtokerror
   !insertmacro StackVerificationEnd
-  !insertmacro EndStrFuncTest StrTok
+  IfErrors strtokerror
+
+  DetailPrint "PASSED StrTok test"
+  Goto +2
+strtokerror:
+  DetailPrint "FAILED StrTok test"
 
   # Test trim new lines
   !insertmacro StackVerificationStart
   ${UnStrTrimNewLines} $0 "$\r$\ntest$\r$\ntest$\r$\n"
   StrCmp $0 "$\r$\ntest$\r$\ntest" 0 strtrimnewlineserror
   !insertmacro StackVerificationEnd
-  !insertmacro EndStrFuncTest StrTrimNewLines
+  IfErrors strtrimnewlineserror
 
-  !insertmacro CompletedAllTests
+  DetailPrint "PASSED StrTrimNewLines test"
+  Goto +2
+strtrimnewlineserror:
+  DetailPrint "FAILED StrTrimNewLines test"
+
 SectionEnd

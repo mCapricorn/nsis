@@ -16,8 +16,7 @@ XPStyle on
 
 RequestExecutionLevel user
 
-
-!define TestDLL '"${NSISDIR}\Plugins\${NSIS_CPU}-unicode\LangDLL.dll"'
+!define TestDLL '"${NSISDIR}\Plugins\LangDLL.dll"'
 !define TestEXE '"${NSISDIR}\Contrib\UIs\default.exe"'
 
 Section

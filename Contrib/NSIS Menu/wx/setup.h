@@ -7,9 +7,6 @@
 // RCS-ID:      $Id: setup0.h,v 1.246 2006/11/09 00:54:51 VZ Exp $
 // Copyright:   (c) Julian Smart
 // Licence:     wxWindows licence
-//
-// Reviewed for Unicode support by Jim Park -- 08/01/2007
-// (This one is the ANSI version.)
 /////////////////////////////////////////////////////////////////////////////
 
 #ifndef _WX_SETUP_H_
@@ -538,7 +535,7 @@
 // Recommended setting: 1
 #define wxUSE_MEDIACTRL     0
 
-// Use GStreamer for Unix (req a lot of dependencies)
+// Use GStreamer for Unix (req a lot of dependancies)
 //
 // Default is 0
 //
@@ -1102,7 +1099,7 @@
 
 // For backward compatibility reasons, this parameter now only controls the
 // default scrolling method used by cursors.  This default behavior can be
-// overridden by setting the second param of wxDB::wxDbGetConnection() or
+// overriden by setting the second param of wxDB::wxDbGetConnection() or
 // wxDb() constructor to indicate whether the connection (and any wxDbTable()s
 // that use the connection) should support forward only scrolling of cursors,
 // or both forward and backward support for backward scrolling cursors is
@@ -1259,7 +1256,7 @@
 // Recommended setting: 1, required by wxMediaCtrl
 #define wxUSE_ACTIVEX 0
 
-// wxDC caching implementation
+// wxDC cacheing implementation
 #define wxUSE_DC_CACHEING 0
 
 // Set this to 1 to enable the use of DIB's for wxBitmap to support

@@ -3,8 +3,7 @@ NSISdl 1.3 - HTTP downloading plugin for NSIS
 
 Copyright (C) 2001-2002 Yaroslav Faybishenko & Justin Frankel
 
-This plugin can be used from NSIS to download files via HTTP.
-Note: HTTPS is not supported, only plain HTTP!
+This plugin can be used from NSIS to download files via http.
 
 To connect to the internet, use the Dialer plugin.
 
@@ -76,7 +75,7 @@ Default values are:
 
 The old /TRANSLATE method still works for backward compatibility.
 
-/TRANSLATE downloading connecting second minute hour plural progress remaining
+/TRANSLATE downloading connecting second minute hour plural progress remianing
 
 Default values are:
 

@@ -3,7 +3,7 @@
  * 
  * This file is a part of NSIS.
  * 
- * Copyright (C) 1999-2022 Nullsoft and Contributors
+ * Copyright (C) 1999-2009 Nullsoft and Contributors
  * 
  * Licensed under the zlib/libpng license (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,9 @@
  */
 
 #include "mmap.h"
+
 #include <cstdio> // for f*
 #include <cassert> // for assert
-#include "tchar.h"
-#include <limits.h>
 #ifndef _WIN32
 #  include <sys/types.h> // for freebsd
 #  include <sys/mman.h>
@@ -26,7 +25,6 @@
 #  include <fcntl.h>
 #  include <unistd.h>
 #endif
-#include "util.h"
 
 // ========
 // MMapFile
@@ -148,10 +146,10 @@ void MMapFile::resize(int newsize)
 #ifdef _WIN32
     if (m_hFile == INVALID_HANDLE_VALUE)
     {
-      TCHAR buf[MAX_PATH], buf2[MAX_PATH];
+      char buf[MAX_PATH], buf2[MAX_PATH];
 
       GetTempPath(MAX_PATH, buf);
-      GetTempFileName(buf, _T("nsd"), 0, buf2);
+      GetTempFileName(buf, "nsd", 0, buf2);
 
       m_hFile = CreateFile(
         buf2,
@@ -217,10 +215,12 @@ void MMapFile::resize(int newsize)
     if (m_hFileDesc == -1)
 #endif
     {
+      extern FILE *g_output;
       extern void quit(); extern int g_display_errors;
       if (g_display_errors)
       {
-        PrintColorFmtMsg_ERR(_T("\nInternal compiler error #12345: error creating mmap the size of %d.\n"), m_iSize);
+        fprintf(g_output,"\nInternal compiler error #12345: error creating mmap the size of %d.\n", m_iSize);
+        fflush(g_output);
       }
       quit();
     }
@@ -248,10 +248,12 @@ void *MMapFile::get(int offset, int *sizep) const
 
   if (!m_iSize || offset + size > m_iSize)
   {
+    extern FILE *g_output;
     extern void quit(); extern int g_display_errors;
     if (g_display_errors) 
     {
-      PrintColorFmtMsg_ERR(_T("\nInternal compiler error #12345: error mmapping file (%d, %d) is out of range.\n"), offset, size);
+      fprintf(g_output,"\nInternal compiler error #12345: error mmapping file (%d, %d) is out of range.\n", offset, size);
+      fflush(g_output);
     }
     quit();
   }
@@ -273,10 +275,12 @@ void *MMapFile::get(int offset, int *sizep) const
   if (m_pView == MAP_FAILED)
 #endif
   {
+    extern FILE *g_output;
     extern void quit(); extern int g_display_errors;
     if (g_display_errors) 
     {
-      PrintColorFmtMsg_ERR(_T("\nInternal compiler error #12345: error mmapping datablock to %d.\n"), size);
+      fprintf(g_output,"\nInternal compiler error #12345: error mmapping datablock to %d.\n", size);
+      fflush(g_output);
     }
     quit();
   }
@@ -318,7 +322,7 @@ void MMapFile::release(void *pView, int size)
   if (!pView)
     return;
 
-  unsigned int alignment = ((ULONG_PTR)pView) % m_iAllocationGranularity;
+  unsigned int alignment = ((unsigned int)pView) % m_iAllocationGranularity;
   pView = (char *)pView - alignment;
   size += alignment;
 #ifdef _WIN32
@@ -332,7 +336,7 @@ void MMapFile::flush(int num)
 {
   if (m_pView)
 #ifdef _WIN32
-  {} // improving performance by commenting: FlushViewOfFile(m_pView, num);
+    FlushViewOfFile(m_pView, num);
 #else
     msync((char *)m_pView, num, MS_SYNC);
 #endif
@@ -414,7 +418,7 @@ void MMapBuf::setro(BOOL bRO)
 
 void MMapBuf::resize(int newlen)
 {
-  if (!m_gb_u && newlen < getmodethreshold()) // still in db mode
+  if (!m_gb_u && newlen < (16 << 20)) // still in db mode
   {
     m_gb.resize(newlen);
     return;
@@ -426,8 +430,7 @@ void MMapBuf::resize(int newlen)
 
   if (newlen > m_alloc)
   {
-    if (!si_add(m_alloc, newlen, (16 << 20))) // add 16mb to top of mapping
-      m_alloc = INT_MAX; // we've hit a signed integer overflow
+    m_alloc = newlen + (16 << 20); // add 16mb to top of mapping
 
     m_fm.resize(m_alloc);
 
@@ -443,7 +446,9 @@ void MMapBuf::resize(int newlen)
 
 int MMapBuf::getsize() const
 {
-  return getlen();
+  if (m_gb_u)
+    return m_fm.getsize();
+  return m_gb.getlen();
 }
 
 int MMapBuf::getlen() const

@@ -1,5 +1,3 @@
-// Unicode support by Jim Park -- 08/13/2007
-//
 #include <cppunit/extensions/HelperMacros.h>
 #include "../mmap.h"
 
@@ -9,17 +7,17 @@
 
 using namespace std; // for std::min
 
+int g_display_errors = 1;
+FILE *g_output = stderr;
 
 void quit() {
-  extern FILE *g_errout;
-  _ftprintf(g_errout, _T("MMap quit\n"));
+  fprintf(g_output, "MMap quit\n");
 }
 
 class MMapTest : public CppUnit::TestFixture {
 
   CPPUNIT_TEST_SUITE( MMapTest );
   CPPUNIT_TEST( testMMapFile );
-  CPPUNIT_TEST( testMMapBuf );
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -69,21 +67,6 @@ public:
       mmap.release();
       mmap.release(p2, size2);
     }
-  }
-
-  void testMMapBuf() {
-    struct Internal : public MMapBuf { static int threshold() { return getmodethreshold(); } };
-    int threshold = Internal::threshold(), tmpint;
-
-    MMapBuf mmap;
-
-    // GrowBuf -> MMapFile -> Unspecified
-    mmap.resize(tmpint = threshold - 1);
-    CPPUNIT_ASSERT_EQUAL( tmpint, mmap.getsize() );
-    mmap.resize(tmpint = threshold + 1);
-    CPPUNIT_ASSERT_EQUAL( tmpint, mmap.getsize() );
-    mmap.resize(tmpint = threshold - 1);
-    CPPUNIT_ASSERT_EQUAL( tmpint, mmap.getsize() ); // We don't care if it does not go back to GrowBuf but the size still has to be correct
   }
 
 };

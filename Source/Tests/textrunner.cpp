@@ -1,14 +1,9 @@
 #include <cppunit/CompilerOutputter.h>
 #include <cppunit/extensions/TestFactoryRegistry.h>
 #include <cppunit/ui/text/TestRunner.h>
-#include "../util.h" // for NSISRT_*
-
-NSISRT_DEFINEGLOBALS();
 
 int main(int argc, char* argv[])
 {
-  if (!NSISRT_Initialize()) return 1;
-
   // Get the top level suite from the registry
   CppUnit::Test *suite = CppUnit::TestFactoryRegistry::getRegistry().makeTest();
 
@@ -20,8 +15,8 @@ int main(int argc, char* argv[])
   runner.setOutputter( new CppUnit::CompilerOutputter( &runner.result(),
                                                        std::cerr ) );
   // Run the tests.
-  bool wasSuccessful = runner.run();
+  bool wasSucessful = runner.run();
 
   // Return error code 1 if the one of test failed.
-  return wasSuccessful ? 0 : 1;
+  return wasSucessful ? 0 : 1;
 }

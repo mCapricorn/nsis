@@ -20,8 +20,7 @@ RequestExecutionLevel user
 
 ; Pages
 
-Page Components
-Page InstFiles
+Page components
 
 ;--------------------------------
 
@@ -70,11 +69,11 @@ Function .onSelChange
     !insertmacro RadioButton ${g1o2}
     !insertmacro RadioButton ${g1o3}
   !insertmacro EndRadioButtons
-
+	
   !insertmacro StartRadioButtons $2
     !insertmacro RadioButton ${g2o1}
     !insertmacro RadioButton ${g2o2}
     !insertmacro RadioButton ${g2o3}
   !insertmacro EndRadioButtons
-
+	
 FunctionEnd

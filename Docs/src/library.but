@@ -35,7 +35,7 @@ The InstallLib macro allows you to install a library. It sets the error flag if 
 
 To ask the user for a reboot, if required, use the Modern UI with a Finish page or use \R{ifrebootflag}{IfRebootFlag} and make your own page or message box.
 
-\S1{library_install_parameters} Parameters
+\S1{} Parameters
 
 \c libtype shared install localfile destfile tempbasedir
 
@@ -101,15 +101,15 @@ Directory on the user's system to store a temporary file when the system has to 
 For Windows 9x/ME support, this directory should be on the same volume as the destination file (destfile).
 The Windows temp directory could be located on any volume, so you cannot use this directory.
 
-\S1{library_install_options} Options
+\S1{} Options
 
-\R{define}{Define} any of the following before inserting a InstallLib macro to modify its behavior as specified.
+\R{define}{Define} any of the following before inserting the InstallLib macro to modify its behavior as specified.
 
 \S2{} LIBRARY_X64
 
 \b Installs a DLL built for Windows x64.
 
-\b \s{Warning:} This resets \R{setregview}{SetRegView} and file system redirection.
+\b \\<b\\>Warning:\\</b\\> this resets file system redirection.
 
 \S2{} LIBRARY_SHELL_EXTENSION
 
@@ -131,17 +131,13 @@ The Windows temp directory could be located on any volume, so you cannot use thi
 
 \b Not recommended for DLLs installed to $SYSDIR.
 
-\S2{} LIBRARY_INSTALL_EQUAL_VERSION
+\S1{} Notes
 
-\b Define this before inserting InstallLib macro to overwrite the file even if the version is the same as the existing file.
+\b If you want to support Windows 9x/ME, you can only use short filenames (8.3).
 
-\S1{library_install_notes} Notes
+\b \\<b\\>Warning:\\</b\\> when deploying DLLs, always use redistributable files. Never copy files from your system directory.
 
-\b If you need to support Windows 9x/ME, you can only use short filenames (8.3).
-
-\b \s{Warning:} Always use redistributable files when deploying DLLs, never copy files from your system directory!
-
-\S1{library_install_examples} Example
+\S1{} Example
 
 \S2{} Unshared DLL
 
@@ -164,7 +160,7 @@ The Windows temp directory could be located on any volume, so you cannot use thi
 
 The UnInstallLib macro allows you to uninstall a library. It sets the error flag if something went wrong during library removal.
 
-\S1{library_uninstall_parameters} Parameters
+\S1{} Parameters
 
 \c libtype shared uninstall file
 
@@ -225,15 +221,15 @@ NOREBOOT_NOTPROTECTED
 
 Location of the library
 
-\S1{library_uninstall_options} Options
+\S1{} Options
 
-\R{define}{Define} any of the following before inserting a UnInstallLib macro to modify its behavior as specified.
+\R{define}{Define} any of the following before inserting the UnInstallLib macro to modify its behavior as specified.
 
 \S2{} LIBRARY_X64
 
 \b Uninstalls a DLL built for Windows x64.
 
-\b \s{Warning:} This resets \R{setregview}{SetRegView} and file system redirection.
+\b \\<b\\>Warning:\\</b\\> this resets \R{setregview}{RegSetView} and file system redirection.
 
 \S2{} LIBRARY_SHELL_EXTENSION
 
@@ -243,7 +239,7 @@ Location of the library
 
 \b Define this before inserting UninstallLib macro to call CoFreeUnusedLibraries after unregistration. Use this for unloading all unnecessary libraries from memory when uninstalling COM libraries.
 
-\S1{library_uninstall_examples} Example
+\S1{} Example
 
 \c  !insertmacro UnInstallLib REGDLL SHARED REBOOT_NOTPROTECTED $SYSDIR\dllname.dll
 
@@ -251,7 +247,7 @@ Location of the library
 \H{library_vb6} Visual Basic 6 Run-Time Files
 
 A new VB6RunTime.nsh header file is available for the setup of the VB6 run-time files.
-To obtain the latest run-time files, download \W{https://nsis.sourceforge.io/vb6runtime.zip}{vb6runtime.zip} and extract this file.
+To obtain the latest run-time files, download \W{http://nsis.sourceforge.net/vb6runtime.zip}{vb6runtime.zip} and extract this file.
 
 \c  !include VB6RunTime.nsh
 \c

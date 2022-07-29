@@ -22,8 +22,8 @@ contribs = Split("""
 
 Import('defenv')
 
-def join(prefix, list_):
-	return list(map(lambda x: '%s/%s' % (prefix, x), list_))
+def join(prefix, list):
+	return map(lambda x: '%s/%s' % (prefix, x), list)
 
 defenv.DistributeDocs(docs, path=target)
 path = 'images'

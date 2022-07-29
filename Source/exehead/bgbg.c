@@ -3,7 +3,7 @@
  * 
  * This file is a part of NSIS.
  * 
- * Copyright (C) 1999-2022 Nullsoft and Contributors
+ * Copyright (C) 1999-2009 Nullsoft and Contributors
  * 
  * Licensed under the zlib/libpng license (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * 
  * This software is provided 'as-is', without any express or implied
  * warranty.
- *
- * Reviewed for Unicode support by Jim Park -- 08/22/2007
  */
 
 #include "../Platform.h"
@@ -77,7 +75,7 @@ LRESULT CALLBACK BG_WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
         if (header->bg_textcolor != -1)
         {
-          HFONT newFont = CreateFontIndirect((LOGFONT*) header->blocks[NB_BGFONT].offset);
+          HFONT newFont = CreateFontIndirect((LOGFONT *) header->blocks[NB_BGFONT].offset);
           if (newFont)
           {
             HFONT oldFont;

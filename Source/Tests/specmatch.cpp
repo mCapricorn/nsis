@@ -1,10 +1,7 @@
 #include <cppunit/extensions/HelperMacros.h>
 #include "../dirreader.h"
-#include "../tstring.h"
 
-#ifndef TEXT
-#define TEXT _T
-#endif
+#include <string>
 
 using namespace std;
 
@@ -16,30 +13,30 @@ class SpecTest : public CppUnit::TestFixture {
 
 public:
   void testMatches() {
-    testMatch(TEXT("test.exe"), TEXT("test.exe"), true);
-    testMatch(TEXT("test"), TEXT("test"), true);
-    testMatch(TEXT("test.exe"), TEXT("test.*"), true);
-    testMatch(TEXT("test"), TEXT("test.*"), true);
-    testMatch(TEXT("test"), TEXT("????"), true);
-    testMatch(TEXT("test"), TEXT("???"), false);
-    testMatch(TEXT("test"), TEXT("*.exe"), false);
-    testMatch(TEXT("test.exe.bat"), TEXT("*.exe"), false);
-    testMatch(TEXT("test.exe.bat"), TEXT("*.bat"), true);
-    testMatch(TEXT("test.exe.bat"), TEXT("*t"), true);
-    testMatch(TEXT("test.exe.bat"), TEXT("*"), true);
-    testMatch(TEXT("test.exe.bat"), TEXT("*x*"), true);
-    testMatch(TEXT("test.exe.exe"), TEXT("*.*"), true);
-    testMatch(TEXT("test.exe.bat"), TEXT("*.b*"), true);
-    testMatch(TEXT("test.exe.bat"), TEXT("tes?.*.bat"), true);
-    testMatch(TEXT("test.exe.bat"), TEXT("tes?.*bat"), true);
-    testMatch(TEXT("test.exe.bat"), TEXT("tes?.*bat***."), true);
-    testMatch(TEXT("test.exe"), TEXT("????.*"), true);
-    testMatch(TEXT("testing.exe"), TEXT("????.*"), false);
+    testMatch("test.exe", "test.exe", true);
+    testMatch("test", "test", true);
+    testMatch("test.exe", "test.*", true);
+    testMatch("test", "test.*", true);
+    testMatch("test", "????", true);
+    testMatch("test", "???", false);
+    testMatch("test", "*.exe", false);
+    testMatch("test.exe.bat", "*.exe", false);
+    testMatch("test.exe.bat", "*.bat", true);
+    testMatch("test.exe.bat", "*t", true);
+    testMatch("test.exe.bat", "*", true);
+    testMatch("test.exe.bat", "*x*", true);
+    testMatch("test.exe.exe", "*.*", true);
+    testMatch("test.exe.bat", "*.b*", true);
+    testMatch("test.exe.bat", "tes?.*.bat", true);
+    testMatch("test.exe.bat", "tes?.*bat", true);
+    testMatch("test.exe.bat", "tes?.*bat***.", true);
+    testMatch("test.exe", "????.*", true);
+    testMatch("testing.exe", "????.*", false);
   }
 
 private:
 
-  void testMatch(tstring name, tstring spec, bool result) {
+  void testMatch(string name, string spec, bool result) {
     CPPUNIT_ASSERT_EQUAL( dir_reader::matches(name, spec), result );
   }
 

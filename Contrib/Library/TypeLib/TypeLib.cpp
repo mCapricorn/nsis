@@ -3,26 +3,28 @@
   NSIS plug-in for Type Library Registration/UnRegistration
   Written by Joost Verburg
 
-  Unicode support by Jim Park -- 08/23/2007
-
 */
 
 #include <windows.h>
 #include <nsis/pluginapi.h> // nsis plugin
-#include <nsis/nsis_tchar.h>
 
-#define NSISFunction(funcname) extern "C" void __declspec(dllexport) funcname(HWND hwndParent, int string_size, TCHAR *variables, stack_t **stacktop)
+#define NSISFunction(funcname) extern "C" void __declspec(dllexport) funcname(HWND hwndParent, int string_size, char *variables, stack_t **stacktop)
 
-extern "C" BOOL WINAPI DllMain(HINSTANCE hInst, ULONG ul_reason_for_call, LPVOID lpReserved) {
+extern "C" BOOL WINAPI DllMain(HANDLE hInst, ULONG ul_reason_for_call, LPVOID lpReserved) {
   return TRUE;
 }
+
+// Functions
 
 NSISFunction(Register) {
 
   EXDLL_INIT();
 
+  char filename[1024];
+  popstring(filename);
+
   wchar_t ole_filename[1024];
-  PopStringW(ole_filename);
+  MultiByteToWideChar(CP_ACP, 0, filename, 1024, ole_filename, 1024);
 
   ITypeLib* typeLib;
   HRESULT hr;
@@ -43,8 +45,11 @@ NSISFunction(UnRegister) {
 
   EXDLL_INIT();
 
+  char filename[1024];
+  popstring(filename);
+
   wchar_t ole_filename[1024];
-  PopStringW(ole_filename);
+  MultiByteToWideChar(CP_ACP, 0, filename, 1024, ole_filename, 1024);
 
   ITypeLib* typeLib;
   HRESULT hr;
@@ -81,8 +86,11 @@ NSISFunction(GetLibVersion) {
 
   EXDLL_INIT();
 
+  char filename[1024];
+  popstring(filename);
+
   wchar_t ole_filename[1024];
-  PopStringW(ole_filename);
+  MultiByteToWideChar(CP_ACP, 0, filename, 1024, ole_filename, 1024);
 
   ITypeLib* typeLib;
   HRESULT hr;
@@ -99,11 +107,11 @@ NSISFunction(GetLibVersion) {
     if (SUCCEEDED(hr))
     {
 
-      TCHAR buf[33];
+      char buf[33];
 
-      wsprintf(buf, _T("%d"), typelibAttr->wMajorVerNum);
+      wsprintf(buf, "%d", typelibAttr->wMajorVerNum);
       pushstring(buf);
-      wsprintf(buf, _T("%d"), typelibAttr->wMinorVerNum);
+      wsprintf(buf, "%d", typelibAttr->wMinorVerNum);
       pushstring(buf);
 
       typeLib->ReleaseTLibAttr(typelibAttr);
@@ -111,8 +119,8 @@ NSISFunction(GetLibVersion) {
     }
     else
     {
-      pushstring(_T("0"));
-      pushstring(_T("0"));
+      pushstring("0");
+      pushstring("0");
     }
 
     typeLib->Release();
@@ -120,8 +128,8 @@ NSISFunction(GetLibVersion) {
   }
   else
   {
-    pushstring(_T("0"));
-    pushstring(_T("0"));
+    pushstring("0");
+    pushstring("0");
   }
 
 }

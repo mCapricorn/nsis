@@ -1,10 +1,7 @@
-// Unicode support by Jim Park -- 08/22/2007
-
 #pragma once
 
 #include <math.h>
 #include <float.h>
-#include <nsis/nsis_tchar.h>
 
 #define DEFAULT_ARRAY_SIZE  1024
 
@@ -100,13 +97,13 @@ typedef struct __ParseInfo
     ExpressionItem *OpsStack;
     ExpressionItem **place;
     ExpressionItem **root;
-    TCHAR valbuf[108];
+    char valbuf[108];
 } ParseInfo;
 
 #define OPERATOR_SET_PRECEDENCE 14
 typedef struct __OpStruct
 {
-    TCHAR name[3];
+    char name[3];
     unsigned char precedence;
     unsigned short int type;
 } OpStruct;
@@ -114,16 +111,16 @@ typedef struct __OpStruct
 #define MAX_USER_VARS   256
 typedef struct __UserVar
 {
-    TCHAR name[28];
+    char name[28];
     ExpressionItem *item;
 } UserVar;
 
 #define MAX_USER_FUNCS  256
 typedef struct __UserFunc
 {
-    TCHAR name[20];
-    unsigned char vars[31]; // only used for indexing
-    unsigned char varsnum;  // number of vars < 256
+    char name[20];
+    unsigned char vars[31];
+    unsigned char varsnum;
     unsigned int varflags;
     ExpressionItem *root;
 } UserFunc;
@@ -143,7 +140,7 @@ typedef double (*Math2dFuncPtr)(double arg, double *arg2);
 
 typedef struct __MathFunction
 {
-    TCHAR name[3];
+    char name[3];
     unsigned char type;
     Math1FuncPtr fptr;
 } MathFunction;
@@ -162,8 +159,8 @@ typedef struct __MathFunction
 #define RTO_PREFFEREDTYPE   0xFF00
 void RunTree(ExpressionItem *from, ExpressionItem* &result, int type);
 
-void StringToItem(TCHAR *&sbuf, ExpressionItem *item, int options);
-void ItemToString(TCHAR *sbuf, ExpressionItem *item);
-void FloatFormat(TCHAR *sbuf, double value, int options);
-void itoa64(__int64 i, TCHAR *buffer);
-int lstrcmpn(TCHAR *s1, const TCHAR *s2, int chars);
+void StringToItem(char *&sbuf, ExpressionItem *item, int options);
+void ItemToString(char *sbuf, ExpressionItem *item);
+void FloatFormat(char *sbuf, double value, int options);
+void itoa64(__int64 i, char *buffer);
+int lstrcmpn(char *s1, const char *s2, int chars);

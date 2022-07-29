@@ -5,14 +5,14 @@
 #include <stdio.h>
 #include "halibut.h"
 
-static const char *const usagetext[] = {
-  "halibut [options] file.but [file.but...]",
+static char *usagetext[] = {
+  "halibut.exe file1 [file2 ...]",
   NULL
 };
 
 void usage(void)
 {
-  const char *const *p;
+  char **p;
   for (p = usagetext; *p; p++)
     puts(*p);
 }

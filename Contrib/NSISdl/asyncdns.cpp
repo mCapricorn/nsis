@@ -4,12 +4,8 @@
 ** Author: Justin Frankel
 ** File: asyncdns.cpp - JNL portable asynchronous DNS implementation
 ** License: see License.txt
-**
-** Unicode support by Jim Park -- 08/24/2007
 */
 
-// Jim Park: For Unicode Support, all string functions must explicitly use
-// ANSI versions if UNICODE is defined.
 
 #include "netinc.h"
 #include "util.h"
@@ -27,7 +23,7 @@ JNL_AsyncDNS::~JNL_AsyncDNS()
   wait_for_thread_death();
 }
 
-DWORD WINAPI JNL_AsyncDNS::_threadfunc(LPVOID _d)
+unsigned long WINAPI JNL_AsyncDNS::_threadfunc(LPVOID _d)
 {
   JNL_AsyncDNS *_this=(JNL_AsyncDNS*)_d;
   struct hostent *hostentry;
@@ -51,7 +47,7 @@ int JNL_AsyncDNS::resolve(char *hostname, unsigned long *addr)
     return 0;
   }
 
-  if (lstrcmpiA(m_hostname,hostname)) m_addr=0;
+  if (lstrcmpi(m_hostname,hostname)) m_addr=0;
   else if (m_addr == INADDR_NONE)
   {
     wait_for_thread_death();
@@ -63,7 +59,7 @@ int JNL_AsyncDNS::resolve(char *hostname, unsigned long *addr)
     wait_for_thread_death();
     return 0;
   }
-  lstrcpyA(m_hostname,hostname);
+  lstrcpy(m_hostname,hostname);
 
   if (!m_thread)
   {

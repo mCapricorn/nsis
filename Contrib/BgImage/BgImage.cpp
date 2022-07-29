@@ -1,5 +1,3 @@
-// Unicode support by Jim Park -- 08/22/2007
-
 #include <windows.h>
 #include <mmsystem.h>
 #include <nsis/pluginapi.h> // nsis plugin
@@ -10,9 +8,9 @@
         g_stringsize=string_size; \
         g_stacktop=stacktop; }
 
-#define NSISFunc(name) extern "C" void __declspec(dllexport) name(HWND hwndParent, int string_size, TCHAR *variables, stack_t **stacktop, extra_parameters *extra)
+#define NSISFunc(name) extern "C" void __declspec(dllexport) name(HWND hwndParent, int string_size, char *variables, stack_t **stacktop, extra_parameters *extra)
 
-TCHAR szTemp[2048];
+char szTemp[2048];
 HWND hWndImage, hWndParent;
 
 HINSTANCE g_hInstance;
@@ -39,7 +37,7 @@ struct myImageList {
   BYTE iType;
   union {
     HBITMAP hBitmap;
-    TCHAR *szText;
+    char *szText;
     COLORREF cGradientFrom;
   };
   RECT rPos;
@@ -57,7 +55,7 @@ struct myImageList {
 
 unsigned int uWndWidth, uWndHeight;
 
-WNDPROC oldProc;
+void *oldProc;
 LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 HBITMAP __stdcall LoadBitmapFile(long right, long bottom, BITMAP *bBitmap);
 COLORREF GetColor();
@@ -82,14 +80,14 @@ NSISFunc(SetReturn) {
   extra->RegisterPluginCallback(g_hInstance, PluginCallback);
 
   popstring(szTemp);
-  bReturn = !lstrcmpi(szTemp, _T("on"));
+  bReturn = !lstrcmpi(szTemp, "on");
 }
 
-static void __stdcall my_pushstring(const TCHAR *str)
+static void __stdcall my_pushstring(char *str)
 {
   stack_t *th;
   if (!g_stacktop || !bReturn) return;
-  th=(stack_t*)GlobalAlloc(GPTR,sizeof(stack_t)+(g_stringsize*sizeof(TCHAR)));
+  th=(stack_t*)GlobalAlloc(GPTR,sizeof(stack_t)+g_stringsize);
   lstrcpyn(th->text,str,g_stringsize);
   th->next=*g_stacktop;
   *g_stacktop=th;
@@ -106,12 +104,13 @@ NSISFunc(SetBg) {
     hWndParent = hwndParent;
 
     if (!hwndParent) {
-      my_pushstring(_T("can't find parent window"));
+      my_pushstring("can't find parent window");
       LCS();
       return;
     }
 
-    WNDCLASS wc = {
+    WNDCLASSEX wc = {
+      sizeof(WNDCLASSEX),
       CS_VREDRAW|CS_HREDRAW,
       WndProc,
       0,
@@ -121,17 +120,18 @@ NSISFunc(SetBg) {
       LoadCursor(0, IDC_ARROW),
       0,
       0,
-      _T("NSISBGImage"),
+      "NSISBGImage",
+      0
     };
-    ATOM atomClass = RegisterClass(&wc);
+    ATOM atomClass = RegisterClassEx(&wc);
     if (!atomClass) {
-      my_pushstring(_T("can't create window"));
+      my_pushstring("can't create window");
       return;
     }
 
     hWndImage = CreateWindowEx(
       WS_EX_TOOLWINDOW,
-      (LPTSTR)(UINT_PTR)atomClass,
+      (LPSTR)(DWORD)atomClass,
       0,
       WS_CLIPSIBLINGS|WS_POPUP,
       0,
@@ -144,12 +144,12 @@ NSISFunc(SetBg) {
       0
     );
     if (!hWndImage) {
-      my_pushstring(_T("can't create window"));
+      my_pushstring("can't create window");
       LCS();
       return;
     }
 
-    oldProc = (WNDPROC)SetWindowLongPtr(hwndParent, GWLP_WNDPROC, (LONG_PTR)WndProc);
+    oldProc = (void *)SetWindowLong(hwndParent, GWL_WNDPROC, (long)WndProc);
   }
 
   bgBitmap.bReady = FALSE;
@@ -166,9 +166,9 @@ NSISFunc(SetBg) {
   uWndWidth = uScrWidth;
   uWndHeight = uScrHeight;
 
-  LPCTSTR szGradient = _T("/GRADIENT");
-  LPCTSTR szFillScreen = _T("/FILLSCREEN");
-  LPCTSTR szTiled = _T("/TILED");
+  char szGradient[] = {'/', 'G', 'R', 'A', 'D', 'I', 'E', 'N', 'T', 0};
+  char szFillScreen[] = {'/', 'F', 'I' ,'L', 'L', 'S', 'C', 'R', 'E', 'E', 'N', 0};
+  char szTiled[] = {'/', 'T', 'I', 'L', 'E', 'D', 0};
 
   popstring(szTemp);
   if (!lstrcmpi(szTemp, szGradient)) {
@@ -225,7 +225,7 @@ done:
     );
   }
 
-  my_pushstring(_T("success"));
+  my_pushstring("success");
 }
 
 NSISFunc(AddImage) {
@@ -233,7 +233,7 @@ NSISFunc(AddImage) {
 
   myImageList *newImg = (myImageList *)GlobalAlloc(GPTR, sizeof(myImageList));
   if (!newImg) {
-    my_pushstring(_T("memory allocation error"));
+    my_pushstring("memory allocation error");
     LCS();
     return;
   }
@@ -242,7 +242,7 @@ NSISFunc(AddImage) {
   newImg->cTransparent = (COLORREF)-1;
 
   popstring(szTemp);
-  if (!lstrcmpi(szTemp, _T("/TRANSPARENT"))) {
+  if (!lstrcmpi(szTemp, "/TRANSPARENT")) {
     newImg->iType = MIL_TRANSPARENT_BITMAP;
     newImg->cTransparent = GetColor();
     popstring(szTemp);
@@ -265,7 +265,7 @@ NSISFunc(AddImage) {
   while (img->next) img = img->next;
   img->next = newImg;
 
-  my_pushstring(_T("success"));
+  my_pushstring("success");
 
   LCS();
 }
@@ -275,7 +275,7 @@ NSISFunc(AddText) {
 
   myImageList *newImg = (myImageList *)GlobalAlloc(GPTR, sizeof(myImageList));
   if (!newImg) {
-    my_pushstring(_T("memory allocation error"));
+    my_pushstring("memory allocation error");
     LCS();
     return;
   }
@@ -283,9 +283,9 @@ NSISFunc(AddText) {
   newImg->iType = MIL_TEXT;
 
   popstring(szTemp);
-  newImg->szText = (TCHAR *)GlobalAlloc(GPTR, (lstrlen(szTemp)+1)*sizeof(TCHAR));
+  newImg->szText = (char *)GlobalAlloc(GPTR, lstrlen(szTemp)+1);
   if (!newImg->szText) {
-    my_pushstring(_T("memory allocation error"));
+    my_pushstring("memory allocation error");
     GlobalFree(newImg);
     LCS();
     return;
@@ -293,7 +293,7 @@ NSISFunc(AddText) {
   lstrcpy(newImg->szText, szTemp);
 
   popstring(szTemp);
-  newImg->hFont = (HFONT) nsishelper_str_to_ptr(szTemp);
+  newImg->hFont = (HFONT)myatoi(szTemp);
   newImg->cTextColor = GetColor();
   
   GetXY(LPPOINT(&newImg->rPos));
@@ -303,7 +303,7 @@ NSISFunc(AddText) {
   while (img->next) img = img->next;
   img->next = newImg;
 
-  my_pushstring(_T("success"));
+  my_pushstring("success");
 
   LCS();
 }
@@ -345,19 +345,19 @@ NSISFunc(Clear) {
 NSISFunc(Destroy) {
   bgBitmap.bReady = FALSE;
   if (IsWindow(hwndParent) && oldProc)
-    SetWindowLongPtr(hwndParent, GWLP_WNDPROC, (LONG_PTR)oldProc);
+    SetWindowLong(hwndParent, GWL_WNDPROC, (long)oldProc);
   if (IsWindow(hWndImage))
     SendMessage(hWndImage, WM_CLOSE, 0, 0);
   hWndImage = 0;
   oldProc = NULL;
   Clear(0, 0, 0, 0, 0);
-  UnregisterClass(_T("NSISBGImage"), g_hInstance);
+  UnregisterClass("NSISBGImage", g_hInstance);
 }
 
 NSISFunc(Sound) {
-  LPCTSTR szLoop = _T("/LOOP");
-  LPCTSTR szWait = _T("/WAIT");
-  LPCTSTR szStop = _T("/STOP");
+  char szLoop[] = {'/', 'L', 'O', 'O', 'P', 0};
+  char szWait[] = {'/', 'W', 'A', 'I', 'T', 0};
+  char szStop[] = {'/', 'S', 'T', 'O', 'P', 0};
 
   DWORD flags = SND_FILENAME | SND_NODEFAULT;
   
@@ -385,7 +385,13 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) 
     if (message == WM_WINDOWPOSCHANGED) {
       SetWindowPos(hwndImage, hwndParent, 0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
     }
-    return CallWindowProc(oldProc, hwnd, message, wParam, lParam);
+    return CallWindowProc(
+      (long (__stdcall *)(HWND,unsigned int,unsigned int,long))oldProc,
+      hwnd,
+      message,
+      wParam,
+      lParam
+    );
   }
   switch (message) {
     case WM_PAINT:
@@ -570,7 +576,7 @@ HBITMAP __stdcall LoadBitmapFile(long right, long bottom, BITMAP *bBitmap)
 {
   HBITMAP hBitmap = (HBITMAP)LoadImage(0, szTemp, IMAGE_BITMAP, right, bottom, LR_LOADFROMFILE);
   if (!hBitmap || !GetObject(hBitmap, sizeof(BITMAP), (void *)bBitmap)) {
-    my_pushstring(_T("can't load bitmap"));
+    my_pushstring("can't load bitmap");
     if (hBitmap)
       DeleteObject(hBitmap);
     LCS();

@@ -2,17 +2,8 @@
 
 #include <string.h> // for memset
 
-#if _MSC_VER > 1200 // Hack to avoid extern "C" causing trouble with templates
-#include <new>
-#include <algorithm>
-#include <iterator>
-#include <memory>
-#endif
-
 #define EXEHEAD
 #define NSIS_CONFIG_COMPRESSION_SUPPORT
-
-#include "../Platform.h"
 
 extern "C" {
 #define NSIS_COMPRESS_USE_BZIP2
@@ -67,5 +58,5 @@ extern "C" {
   }
 
 DECOMPRESSOR(lzmaDecompressor, lzma_stream, lzmaInit, lzmaDecode, unsigned char);
-DECOMPRESSOR(bzip2Decompressor, DState, BZ2_bzDecompressInit, BZ2_bzDecompress, unsigned char);
+DECOMPRESSOR(bzip2Decompressor, DState, BZ2_bzDecompressInit, BZ2_bzDecompress, char);
 DECOMPRESSOR(zlibDecompressor, z_stream, inflateReset, inflate, unsigned char);

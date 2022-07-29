@@ -4,7 +4,7 @@
  * This file is a part of LZMA compression module for NSIS.
  * 
  * Original LZMA SDK Copyright (C) 1999-2006 Igor Pavlov
- * Modifications Copyright (C) 2003-2022 Amir Szekely <kichik@netvision.net.il>
+ * Modifications Copyright (C) 2003-2006 Amir Szekely <kichik@netvision.net.il>
  * 
  * Licensed under the Common Public License version 1.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,8 +13,6 @@
  * 
  * This software is provided 'as-is', without any express or implied
  * warranty.
- *
- * Unicode support by Jim Park -- 08/28/2007
  */
 
 #include "StdAfx.h"
@@ -23,7 +21,6 @@
 #include "MyWindows.h"
 #else
 #include <stdlib.h>
-#include "../../tchar.h"
 #endif
 
 #include "Alloc.h"
@@ -42,7 +39,7 @@ void *MyAlloc(size_t size) throw()
   if (size == 0)
     return 0;
   #ifdef _SZ_ALLOC_DEBUG
-  _ftprintf(stderr, _T("\nAlloc %10d bytes; count = %10d"), size, g_allocCount++);
+  fprintf(stderr, "\nAlloc %10d bytes; count = %10d", size, g_allocCount++);
   #endif
   return ::malloc(size);
 }
@@ -51,7 +48,7 @@ void MyFree(void *address) throw()
 {
   #ifdef _SZ_ALLOC_DEBUG
   if (address != 0)
-    _ftprintf(stderr, _T("\nFree; count = %10d"), --g_allocCount);
+    fprintf(stderr, "\nFree; count = %10d", --g_allocCount);
   #endif
   
   ::free(address);
@@ -64,7 +61,7 @@ void *MidAlloc(size_t size) throw()
   if (size == 0)
     return 0;
   #ifdef _SZ_ALLOC_DEBUG
-  _ftprintf(stderr, _T("\nAlloc_Mid %10d bytes;  count = %10d"), size, g_allocCountMid++);
+  fprintf(stderr, "\nAlloc_Mid %10d bytes;  count = %10d", size, g_allocCountMid++);
   #endif
   return ::VirtualAlloc(0, size, MEM_COMMIT, PAGE_READWRITE);
 }
@@ -73,7 +70,7 @@ void MidFree(void *address) throw()
 {
   #ifdef _SZ_ALLOC_DEBUG
   if (address != 0)
-    _ftprintf(stderr, _T("\nFree_Mid; count = %10d"), --g_allocCountMid);
+    fprintf(stderr, "\nFree_Mid; count = %10d", --g_allocCountMid);
   #endif
   if (address == 0)
     return;
@@ -92,7 +89,7 @@ typedef SIZE_T (WINAPI *GetLargePageMinimumP)();
 bool SetLargePageSize()
 {
   GetLargePageMinimumP largePageMinimum = (GetLargePageMinimumP)
-        ::GetProcAddress(::GetModuleHandle(_T("kernel32.dll")), "GetLargePageMinimum");
+        ::GetProcAddress(::GetModuleHandle(TEXT("kernel32.dll")), "GetLargePageMinimum");
   if (largePageMinimum == 0)
     return false;
   SIZE_T size = largePageMinimum();
@@ -108,7 +105,7 @@ void *BigAlloc(size_t size) throw()
   if (size == 0)
     return 0;
   #ifdef _SZ_ALLOC_DEBUG
-  _ftprintf(stderr, _T("\nAlloc_Big %10d bytes;  count = %10d"), size, g_allocCountBig++);
+  fprintf(stderr, "\nAlloc_Big %10d bytes;  count = %10d", size, g_allocCountBig++);
   #endif
   
   if (size >= (1 << 18))
@@ -125,7 +122,7 @@ void BigFree(void *address) throw()
 {
   #ifdef _SZ_ALLOC_DEBUG
   if (address != 0)
-    _ftprintf(stderr, _T("\nFree_Big; count = %10d"), --g_allocCountBig);
+    fprintf(stderr, "\nFree_Big; count = %10d", --g_allocCountBig);
   #endif
   
   if (address == 0)

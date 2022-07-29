@@ -1,5 +1,3 @@
-// Unicode support by Jim Park -- 08/24/2007
-
 #include <windows.h>
 
 #include <nsis/pluginapi.h> // nsis plugin
@@ -10,12 +8,12 @@
 
 extern struct nsDialog g_dialog;
 
-static int NSDFUNC ConvertPlacement(TCHAR *str, int total, int height)
+static int NSDFUNC ConvertPlacement(char *str, int total, int height)
 {
-  TCHAR unit = *CharPrev(str, str + lstrlen(str));
+  char unit = *CharPrev(str, str + lstrlen(str));
   int x = myatoi(str);
 
-  if (unit == _T('%'))
+  if (unit == '%')
   {
     if (x < 0)
     {
@@ -24,7 +22,7 @@ static int NSDFUNC ConvertPlacement(TCHAR *str, int total, int height)
 
     return MulDiv(total, x, 100);
   }
-  else if (unit == _T('u'))
+  else if (unit == 'u')
   {
     RECT r;
 
@@ -52,7 +50,7 @@ int NSDFUNC PopPlacement(int *x, int *y, int *width, int *height)
   RECT dialogRect;
   int  dialogWidth;
   int  dialogHeight;
-  TCHAR buf[1024];
+  char buf[1024];
 
   GetClientRect(g_dialog.hwDialog, &dialogRect);
   dialogWidth = dialogRect.right;

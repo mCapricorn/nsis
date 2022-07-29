@@ -3,7 +3,7 @@
  * 
  * This file is a part of NSIS.
  * 
- * Copyright (C) 1999-2022 Nullsoft and Contributors
+ * Copyright (C) 1999-2009 Nullsoft and Contributors
  * 
  * Licensed under the zlib/libpng license (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * 
  * This software is provided 'as-is', without any express or implied
  * warranty.
- * 
- * Modified for Unicode support by Jim Park -- 08/21/2007
  */
 
 #include "ResourceVersionInfo.h"
@@ -21,7 +19,6 @@
 #include "Platform.h"
 #include "util.h"
 #include "winchar.h"
-#include "utf.h"
 
 #ifdef NSIS_SUPPORT_VERSION_INFO
 
@@ -46,8 +43,8 @@ struct version_string_list
 
 CVersionStrigList::~CVersionStrigList()
 {
-  struct version_string_list *itr = (struct version_string_list *) m_gr.get();
-  int i = m_gr.getlen() / sizeof(struct version_string_list);
+  struct version_string_list *itr = (struct version_string_list *) gr.get();
+  int i = gr.getlen() / sizeof(struct version_string_list);
 
   while (i--)
   {
@@ -57,46 +54,49 @@ CVersionStrigList::~CVersionStrigList()
 
 int CVersionStrigList::add(LANGID langid, int codepage)
 {
-  TCHAR Buff[10];
-  _stprintf(Buff, _T("%04x"), langid);
+  char Buff[10];
+  sprintf(Buff, "%04x", langid);
   int pos = SortedStringListND<struct version_string_list>::add(Buff);
   if (pos == -1) return false;
-  
-  version_string_list *data = ((version_string_list *)m_gr.get())+ pos;
-  data->pChildStrings = new DefineList;
-  data->codepage      = codepage;
-  data->lang_id       = langid;
+  ((struct version_string_list*)gr.get())[pos].pChildStrings = new DefineList;
+  ((struct version_string_list*)gr.get())[pos].codepage = codepage;
+  ((struct version_string_list*)gr.get())[pos].lang_id = langid;
   return pos;
 }
 
 LANGID CVersionStrigList::get_lang(int idx)
 {
-  version_string_list *data=(version_string_list *)m_gr.get();
+  version_string_list *data=(version_string_list *)gr.get();
   return data[idx].lang_id;
 }
 
 int CVersionStrigList::get_codepage(int idx)
 {
-  version_string_list *data=(version_string_list *)m_gr.get();
+  version_string_list *data=(version_string_list *)gr.get();
   return data[idx].codepage;
 }
 
 DefineList* CVersionStrigList::get_strings(int idx)
 {
-  version_string_list *data=(version_string_list *)m_gr.get();
+  version_string_list *data=(version_string_list *)gr.get();
   return data[idx].pChildStrings;
 }
 
 int CVersionStrigList::find(LANGID lang_id, int codepage)
 {
-  TCHAR Buff[10];
-  _stprintf(Buff, _T("%04x"), lang_id);
+  char Buff[10];
+  sprintf(Buff, "%04x", lang_id);
   return SortedStringListND<struct version_string_list>::find(Buff);
+}
+
+int CVersionStrigList::getlen()
+{
+  return strings.getlen();
 }
 
 int CVersionStrigList::getnum()
 {
-  return m_gr.getlen()/sizeof(struct version_string_list);
+  return gr.getlen()/sizeof(struct version_string_list);
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -115,6 +115,11 @@ CResourceVersionInfo::~CResourceVersionInfo()
     
 }
 
+void CResourceVersionInfo::SetFileFlags(int Value)
+{
+    m_FixedInfo.dwFileFlags = (m_FixedInfo.dwFileFlags & ~(m_FixedInfo.dwFileFlagsMask)) || Value;    
+}
+
 void CResourceVersionInfo::SetFileVersion(int HighPart, int LowPart)
 {
     m_FixedInfo.dwFileVersionLS = LowPart;
@@ -127,23 +132,23 @@ void CResourceVersionInfo::SetProductVersion(int HighPart, int LowPart)
     m_FixedInfo.dwProductVersionMS = HighPart;
 }
 
-// Jim Park: Not sure where this is used.
 int GetVersionHeader (LPSTR &p, WORD &wLength, WORD &wValueLength, WORD &wType)
 {
-    WINWCHAR *szKey;
-    char *baseP = p;
-
+    WCHAR *szKey;
+    char * baseP;
+    
+    baseP = p;
     wLength = *(WORD*)p;
     p += sizeof(WORD);
     wValueLength = *(WORD*)p;
     p += sizeof(WORD);
     wType = *(WORD*)p;
     p += sizeof(WORD);
-    szKey = (WINWCHAR*)p;
-    p += (WinWStrLen(szKey) + 1) * sizeof (WINWCHAR);
-    while ( ((ULONG_PTR)p % 4) != 0 ) p++;
-
-    return (int)(p - baseP);
+    szKey = (WCHAR*)p;
+    p += (winchar_strlen(szKey) + 1) * sizeof (WCHAR);
+    while ( ((long)p % 4) != 0 )
+        p++;
+    return p - baseP;    
 }
 
 DWORD ZEROS = 0;
@@ -154,24 +159,16 @@ void PadStream (GrowBuf &strm)
         strm.add (&ZEROS, 4 - (strm.getlen() % 4));
 }
 
-// Helper function only used by CResourceVersionInfo::ExportToStream
-// Cannot handle anything longer than 65K objects.
-//
-// @param wLength Size in bytes of the entire object we are storing.
-// @param wValueLength The value length in bytes.
-// @param wType If type is 1, it's a wchar_t string, so save value length appropriately.
-// @param key The string key
-// @param value The value mapped to string key.
-static void SaveVersionHeaderUTF16LE(GrowBuf &strm, WORD wLength, WORD wValueLength, WORD wType, const unsigned short *key, void *value)
+void SaveVersionHeader (GrowBuf &strm, WORD wLength, WORD wValueLength, WORD wType, const WCHAR *key, void *value)
 {
     WORD valueLen;
     WORD keyLen;
     
-    strm.add (&wLength, sizeof(wLength));
+    strm.add (&wLength, sizeof (wLength));
     
-    strm.add (&wValueLength, sizeof(wValueLength));
+    strm.add (&wValueLength, sizeof (wValueLength));
     strm.add (&wType, sizeof (wType));
-    keyLen = WORD((StrLenUTF16(key) + 1) * sizeof(WINWCHAR));
+    keyLen = WORD((winchar_strlen(key) + 1) * sizeof (WCHAR));
     strm.add ((void*)key, keyLen);
     
     PadStream(strm);
@@ -180,16 +177,9 @@ static void SaveVersionHeaderUTF16LE(GrowBuf &strm, WORD wLength, WORD wValueLen
     {
         valueLen = wValueLength;
         if ( wType == 1 )
-            valueLen = valueLen * WORD(sizeof(WINWCHAR));
+            valueLen = valueLen * WORD(sizeof (WCHAR));
         strm.add (value, valueLen);
     }
-}
-static void SaveVersionHeader(GrowBuf &strm, WORD wLength, WORD wValueLength, WORD wType, const wchar_t *key, void *value)
-{
-  WCToUTF16LEHlpr cnv;
-  if (!cnv.Create(key)) throw std::runtime_error("Unicode conversion failed");
-  SaveVersionHeaderUTF16LE(strm, wLength, wValueLength, wType, cnv.Get(), value);
-  cnv.Destroy();
 }
 
 void CResourceVersionInfo::ExportToStream(GrowBuf &strm, int Index)
@@ -197,9 +187,12 @@ void CResourceVersionInfo::ExportToStream(GrowBuf &strm, int Index)
     DWORD v;
     WORD wSize;  
     int p, p1;
+    WCHAR *KeyName, *KeyValue;
 
     strm.resize(0);
-    SaveVersionHeader(strm, 0, sizeof (VS_FIXEDFILEINFO), 0, L"VS_VERSION_INFO", &m_FixedInfo);
+    KeyName = winchar_fromansi("VS_VERSION_INFO");
+    SaveVersionHeader (strm, 0, sizeof (VS_FIXEDFILEINFO), 0, KeyName, &m_FixedInfo);
+    delete [] KeyName;
     
     DefineList *pChildStrings = m_ChildStringLists.get_strings(Index);
     if ( pChildStrings->getnum() > 0 )
@@ -207,19 +200,22 @@ void CResourceVersionInfo::ExportToStream(GrowBuf &strm, int Index)
       GrowBuf stringInfoStream;
       int codepage = m_ChildStringLists.get_codepage(Index);
       LANGID langid = m_ChildStringLists.get_lang(Index);
-      wchar_t Buff[16];
-      _snwprintf(Buff, COUNTOF(Buff), L"%04x%04x", langid, codepage);
-      SaveVersionHeader(stringInfoStream, 0, 0, 0, Buff, &ZEROS);
+      char Buff[16];
+      sprintf(Buff, "%04x%04x", langid, codepage);
+      KeyName = winchar_fromansi(Buff, CP_ACP);
+      SaveVersionHeader (stringInfoStream, 0, 0, 0, KeyName, &ZEROS);
+      delete [] KeyName;
       
       for ( int i = 0; i < pChildStrings->getnum(); i++ )
       {
         PadStream (stringInfoStream);
-        WCToUTF16LEHlpr cnvName, cnvValue;
-        if (!cnvName.Create(pChildStrings->getname(i), codepage)) throw std::runtime_error("Unicode conversion failed");
-        if (!cnvValue.Create(pChildStrings->getvalue(i), codepage)) throw std::runtime_error("Unicode conversion failed");
+        
         p = stringInfoStream.getlen();
-        SaveVersionHeaderUTF16LE(stringInfoStream, 0, WORD(StrLenUTF16(cnvValue.Get()) + 1), 1, cnvName.Get(), (void*)cnvValue.Get());
-        cnvName.Destroy(), cnvValue.Destroy();
+        KeyName = winchar_fromansi(pChildStrings->getname(i), codepage);
+        KeyValue = winchar_fromansi(pChildStrings->getvalue(i), codepage);
+        SaveVersionHeader (stringInfoStream, 0, WORD(winchar_strlen(KeyValue) + 1), 1, KeyName, (void*)KeyValue);
+        delete [] KeyName;
+        delete [] KeyValue;
         wSize = WORD(stringInfoStream.getlen() - p);
         
         *(WORD*)((PBYTE)stringInfoStream.get()+p)=wSize;
@@ -230,23 +226,29 @@ void CResourceVersionInfo::ExportToStream(GrowBuf &strm, int Index)
       
       PadStream (strm);
       p = strm.getlen();
-      SaveVersionHeader(strm, 0, 0, 0, L"StringFileInfo", &ZEROS);
+      KeyName = winchar_fromansi("StringFileInfo", CP_ACP);
+      SaveVersionHeader (strm, 0, 0, 0, KeyName, &ZEROS);
+      delete [] KeyName;
       strm.add (stringInfoStream.get(), stringInfoStream.getlen());
       wSize = WORD(strm.getlen() - p);
       
       *(WORD*)((PBYTE)strm.get()+p)=wSize;
     }
 
-    // Show all languages available using Var-Translations
+    // Show all languages avaiable using Var-Translations
     if ( m_ChildStringLists.getnum() > 0 )
     {
       PadStream (strm);
       p = strm.getlen();
-      SaveVersionHeader(strm, 0, 0, 0, L"VarFileInfo", &ZEROS);
+      KeyName = winchar_fromansi("VarFileInfo", CP_ACP);
+      SaveVersionHeader (strm, 0, 0, 0, KeyName, &ZEROS);
+      delete [] KeyName;
       PadStream (strm);
       
       p1 = strm.getlen();
-      SaveVersionHeader(strm, 0, 0, 0, L"Translation", &ZEROS);
+      KeyName = winchar_fromansi("Translation", CP_ACP);
+      SaveVersionHeader (strm, 0, 0, 0, KeyName, &ZEROS);
+      delete [] KeyName;
       
       // First add selected code language translation
       v = MAKELONG(m_ChildStringLists.get_lang(Index), m_ChildStringLists.get_codepage(Index));
@@ -276,7 +278,7 @@ void CResourceVersionInfo::ExportToStream(GrowBuf &strm, int Index)
 }
 
 // Returns 0 if success, 1 if already defined
-int CResourceVersionInfo::SetKeyValue(LANGID lang_id, int codepage, TCHAR* AKeyName, TCHAR* AValue)
+int CResourceVersionInfo::SetKeyValue(LANGID lang_id, int codepage, char* AKeyName, char* AValue)
 {
   int pos = m_ChildStringLists.find(lang_id, codepage);
   if ( pos == -1 )
@@ -302,7 +304,7 @@ int CResourceVersionInfo::GetCodePage(int Index)
   return m_ChildStringLists.get_codepage(Index);
 }
 
-TCHAR *CResourceVersionInfo::FindKey(LANGID LangID, int codepage, const TCHAR *pKeyName)
+char *CResourceVersionInfo::FindKey(LANGID LangID, int codepage, const char *pKeyName)
 {
   int pos = m_ChildStringLists.find(LangID, codepage);
   if ( pos == -1 )

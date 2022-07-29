@@ -43,7 +43,7 @@ import SCons.Tool
 import SCons.Util
 
 # This is what we search for to find mingw:
-prefixes32 = SCons.Util.Split("""
+prefixes = SCons.Util.Split("""
     mingw32-
     mingw32msvc-
     i386-mingw32-
@@ -58,26 +58,9 @@ prefixes32 = SCons.Util.Split("""
     i486-pc-mingw32-
     i586-pc-mingw32-
     i686-pc-mingw32-
-    i386-w64-mingw32-
-    i486-w64-mingw32-
-    i586-w64-mingw32-
-    i686-w64-mingw32-
-""")
-
-prefixes64 = SCons.Util.Split("""
-    x86_64-w64-mingw32-
 """)
 
 def find(env):
-    # Explicitly specified toolchain to build Windows executables
-    # takes predominance.
-    prefix = SCons.Script.ARGUMENTS.get('XGCC_W32_PREFIX', None)
-    prefixes = prefixes32
-    if env['TARGET_ARCH'] == 'amd64':
-        prefixes = prefixes64
-
-    if prefix:
-        prefixes.insert(0, prefix)
     for prefix in prefixes:
         # First search in the SCons path and then the OS path:
         if env.WhereIs(prefix + 'gcc') or SCons.Util.WhereIs(prefix + 'gcc'):
@@ -106,7 +89,7 @@ def shlib_emitter(target, source, env):
     no_import_lib = env.get('no_import_lib', 0)
 
     if not dll:
-        raise SCons.Errors.UserError("A shared library should have exactly one target with the suffix: %s" % env.subst("$SHLIBSUFFIX"))
+        raise SCons.Errors.UserError, "A shared library should have exactly one target with the suffix: %s" % env.subst("$SHLIBSUFFIX")
     
     if not no_import_lib and \
        not env.FindIxes(target, 'LIBPREFIX', 'LIBSUFFIX'):
@@ -149,9 +132,9 @@ def generate(env):
         if not path: 
             path = []
         if SCons.Util.is_String(path):
-            path = str.split(path, os.pathsep)
+            path = string.split(path, os.pathsep)
 
-        env['ENV']['PATH'] = str.join(os.pathsep, [dir] + path)
+        env['ENV']['PATH'] = string.join([dir] + path, os.pathsep)
 
     # Most of mingw is the same as gcc and friends...
     gnu_tools = ['gcc', 'g++', 'gnulink', 'ar', 'gas']

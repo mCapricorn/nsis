@@ -1,11 +1,9 @@
 !include LogicLib.nsh
 !include nsDialogs.nsh
-!include WinMessages.nsh
 
 Name "nsDialogs Timer Example"
 OutFile "nsDialogs Timer Example.exe"
 XPStyle on
-RequestExecutionLevel user
 
 Var DIALOG
 Var TEXT
@@ -16,11 +14,10 @@ Var BUTTON
 Var BUTTON2
 
 Page custom nsDialogsPage
-!pragma warning disable 8000 ; "Page instfiles not used, no sections will be executed!"
 
 Function OnTimer
 
-	SendMessage $PROGBAR ${PBM_GETPOS} 0 0 $1
+  	SendMessage $PROGBAR ${PBM_GETPOS} 0 0 $1
 	${If} $1 = 100
 		SendMessage $PROGBAR ${PBM_SETPOS} 0 0
 	${Else}
@@ -31,7 +28,7 @@ FunctionEnd
 
 Function OnTimer2
 
-	SendMessage $PROGBAR2 ${PBM_GETPOS} 0 0 $1
+  	SendMessage $PROGBAR2 ${PBM_GETPOS} 0 0 $1
 	${If} $1 = 100
 		SendMessage $PROGBAR2 ${PBM_SETPOS} 0 0
 	${Else}
@@ -42,10 +39,10 @@ FunctionEnd
 
 Function OnTimer3
 
-	SendMessage $PROGBAR3 ${PBM_GETPOS} 0 0 $1
+  	SendMessage $PROGBAR3 ${PBM_GETPOS} 0 0 $1
 	${If} $1 >= 100
 		${NSD_KillTimer} OnTimer3
-		MessageBox MB_OK "Timer 3 killed"
+ 		MessageBox MB_OK "Timer 3 killed"
 	${Else}
 		SendMessage $PROGBAR3 ${PBM_DELTAPOS} 2 0
 	${EndIf}
@@ -85,8 +82,6 @@ Function nsDialogsPage
 
 	${NSD_CreateProgressBar} 0u 52u 100% 12u ""
 	Pop $PROGBAR2
-	SendMessage $PROGBAR2 ${PBM_SETBARCOLOR} 0 0x0000FF ; No visual styles
-	SendMessage $PROGBAR2 ${PBM_SETSTATE} ${PBST_ERROR} 0 ; Vista+
 
 	${NSD_CreateButton} 0u 67u 100u 14u "Kill Timer 2"
 	Pop $BUTTON2

@@ -1,5 +1,3 @@
-// Unicode support by Jim Park -- 08/22/2007
-
 #include <windows.h>
 #include <nsis/pluginapi.h> // nsis plugin
 #include "MyMath.h"
@@ -11,27 +9,25 @@ extern "C" int _fltused;
 int _fltused = 1;
 #endif
 
-#define EIPtrToInt(pEI) ( (int) (INT_PTR) (pEI) ) // Make GCC (64-bit) happy. BUGBUG64: Somebody should verify that this truncation is OK
-
 ExpressionItem *stack;
 
 int UserVarsCount, UserFuncsCount;
 UserVar UserVars[MAX_USER_VARS];
 UserFunc UserFuncs[MAX_USER_FUNCS];
 
-void PrintTree(ExpressionItem *root, TCHAR *str);
-void ParseString(TCHAR *&sp, ExpressionItem* &itemplace);
+void PrintTree(ExpressionItem *root, char *str);
+void ParseString(char *&sp, ExpressionItem* &itemplace);
 void CleanupItems(ExpressionItem* &itemplace);
-void PlaceVariable(TCHAR *&vb, ParseInfo *pi);
+void PlaceVariable(char *&vb, ParseInfo *pi);
 
-void PlaceNewItem(TCHAR *&vb, ParseInfo *pi, int precedence)
+void PlaceNewItem(char *&vb, ParseInfo *pi, int precedence)
 {
     ExpressionItem *newroot;
     PlaceVariable(vb, pi);
     if (pi->item == NULL) return;
 
-    while ((pi->OpsStack) && (((EIPtrToInt(pi->OpsStack->param2)) < precedence)
-        || (((EIPtrToInt(pi->OpsStack->param2)) == precedence)
+    while ((pi->OpsStack) && ((((int) pi->OpsStack->param2) < precedence)
+        || ((((int)pi->OpsStack->param2) == precedence)
             && (precedence != OPERATOR_SET_PRECEDENCE))))
     {
         // second operand for our operator
@@ -60,12 +56,12 @@ void PlaceNewItem(TCHAR *&vb, ParseInfo *pi, int precedence)
 #define NSIS_VARS_STACK 25
 #define NSIS_VARS_NSTACK 26
 
-typedef TCHAR smallstr[2];
-const smallstr NSISVariablesNames[NSIS_VARS_COUNT] = {{_T('r'),_T('0')}, {_T('r'),_T('1')}, {_T('r'),_T('2')}, {_T('r'),_T('3')}, {_T('r'),_T('4')}, {_T('r'),_T('5')}, {_T('r'),_T('6')}, {_T('r'),_T('7')}, {_T('r'),_T('8')}, {_T('r'),_T('9')},
-{_T('R'),_T('0')}, {_T('R'),_T('1')}, {_T('R'),_T('2')}, {_T('R'),_T('3')}, {_T('R'),_T('4')}, {_T('R'),_T('5')}, {_T('R'),_T('6')}, {_T('R'),_T('7')}, {_T('R'),_T('8')}, {_T('R'),_T('9')},
-{_T('C'),_T('L')}, {_T('I'),_T('D')}, {_T('O'),_T('D')}, {_T('E'),_T('D')}, {_T('L'),_T('G')}, {_T('S'),0}, {_T('N'),_T('S')}};
+typedef char smallstr[2];
+const smallstr NSISVariablesNames[NSIS_VARS_COUNT] = {{'r','0'}, {'r','1'}, {'r','2'}, {'r','3'}, {'r','4'}, {'r','5'}, {'r','6'}, {'r','7'}, {'r','8'}, {'r','9'},
+{'R','0'}, {'R','1'}, {'R','2'}, {'R','3'}, {'R','4'}, {'R','5'}, {'R','6'}, {'R','7'}, {'R','8'}, {'R','9'},
+{'C','L'}, {'I','D'}, {'O','D'}, {'E','D'}, {'L','G'}, {'S',0}, {'N','S'}};
 
-ExpressionItem *FindVariable(TCHAR *varname)
+ExpressionItem *FindVariable(char *varname)
 {
     int i;
 
@@ -102,7 +98,7 @@ ExpressionItem *FindVariable(TCHAR *varname)
     return item;
 }
 
-void PlaceVariable(TCHAR *&vb, ParseInfo *pi)
+void PlaceVariable(char *&vb, ParseInfo *pi)
 {
     if (vb <= pi->valbuf) return;
     *vb = 0;
@@ -116,43 +112,43 @@ typedef double (*math_di)(double, int*);
 
 #define MATHFUNCNUM 29
 const MathFunction MathFunctions[MATHFUNCNUM] = {
-    {{_T('s'),_T('i'),_T('n')}, ITF_MATH1 >> 8, sin},
-    {{_T('s'),_T('n'),_T('h')}, ITF_MATH1 >> 8, sinh},
-    {{_T('a'),_T('s'),_T('n')}, ITF_MATH1 >> 8, asin},
-    {{_T('c'),_T('o'),_T('s')}, ITF_MATH1 >> 8, cos},
-    {{_T('c'),_T('s'),_T('h')}, ITF_MATH1 >> 8, cosh},
-    {{_T('a'),_T('c'),_T('s')}, ITF_MATH1 >> 8, acos},
-    {{_T('t'),_T('a'),_T('n')}, ITF_MATH1 >> 8, tan},
-    {{_T('t'),_T('n'),_T('h')}, ITF_MATH1 >> 8, tanh},
-    {{_T('a'),_T('t'),_T('n')}, ITF_MATH1 >> 8, atan},
-    {{_T('a'),_T('b'),_T('s')}, ITF_MATH1 >> 8, fabs},
-    {{_T('l'),_T('n'),0}, ITF_MATH1 >> 8, log},
-    {{_T('l'),_T('o'),_T('g')}, ITF_MATH1 >> 8, log10},
-    {{_T('e'),_T('x'),_T('p')}, ITF_MATH1 >> 8, exp},
-    {{_T('s'),_T('q'),_T('t')}, ITF_MATH1 >> 8, sqrt},
-    {{_T('c'),_T('e'),_T('l')}, ITF_MATH1 >> 8, ceil},
-    {{_T('f'),_T('l'),_T('r')}, ITF_MATH1 >> 8, floor},
+    {{'s','i','n'}, ITF_MATH1 >> 8, sin},
+    {{'s','n','h'}, ITF_MATH1 >> 8, sinh},
+    {{'a','s','n'}, ITF_MATH1 >> 8, asin},
+    {{'c','o','s'}, ITF_MATH1 >> 8, cos},
+    {{'c','s','h'}, ITF_MATH1 >> 8, cosh},
+    {{'a','c','s'}, ITF_MATH1 >> 8, acos},
+    {{'t','a','n'}, ITF_MATH1 >> 8, tan},
+    {{'t','n','h'}, ITF_MATH1 >> 8, tanh},
+    {{'a','t','n'}, ITF_MATH1 >> 8, atan},
+    {{'a','b','s'}, ITF_MATH1 >> 8, fabs},
+    {{'l','n',0}, ITF_MATH1 >> 8, log},
+    {{'l','o','g'}, ITF_MATH1 >> 8, log10},
+    {{'e','x','p'}, ITF_MATH1 >> 8, exp},
+    {{'s','q','t'}, ITF_MATH1 >> 8, sqrt},
+    {{'c','e','l'}, ITF_MATH1 >> 8, ceil},
+    {{'f','l','r'}, ITF_MATH1 >> 8, floor},
 
-    {{_T('a'),_T('t'),_T('2')}, ITF_MATH2 >> 8, (Math1FuncPtr)(math_d2)atan2},
-    {{_T('p'),_T('o'),_T('w')}, ITF_MATH2 >> 8, (Math1FuncPtr)(math_d2)pow},
-    {{_T('f'),_T('m'),_T('d')}, ITF_MATH2 >> 8, (Math1FuncPtr)(math_d2)fmod},
+    {{'a','t','2'}, ITF_MATH2 >> 8, (Math1FuncPtr)(math_d2)atan2},
+    {{'p','o','w'}, ITF_MATH2 >> 8, (Math1FuncPtr)(math_d2)pow},
+    {{'f','m','d'}, ITF_MATH2 >> 8, (Math1FuncPtr)(math_d2)fmod},
 
     // type conversions
-    {{_T('i'),0,0}, ITF_TYPE >> 8, (Math1FuncPtr)ITC_INT},
-    {{_T('s'),0,0}, ITF_TYPE >> 8, (Math1FuncPtr)ITC_STRING},
-    {{_T('f'),0,0}, ITF_TYPE >> 8, (Math1FuncPtr)ITC_FLOAT},
-    {{_T('a'),0,0}, ITF_TYPE >> 8, (Math1FuncPtr)ITC_ARRAY},
+    {{'i',0,0}, ITF_TYPE >> 8, (Math1FuncPtr)ITC_INT},
+    {{'s',0,0}, ITF_TYPE >> 8, (Math1FuncPtr)ITC_STRING},
+    {{'f',0,0}, ITF_TYPE >> 8, (Math1FuncPtr)ITC_FLOAT},
+    {{'a',0,0}, ITF_TYPE >> 8, (Math1FuncPtr)ITC_ARRAY},
 #define ITFT_CARRAY_ID    23
-    {{_T('c'),_T('a'),0}, ITF_TYPE >> 8, (Math1FuncPtr)ITC_ARRAY},
-    {{_T('f'),_T('f'),0}, ITF_TYPE >> 8, (Math1FuncPtr)FTT_FLOATF},
-    {{_T('l'),0,0}, ITF_TYPE >> 8, (Math1FuncPtr)FTT_LEN},
-    {{_T('c'),0,0}, ITF_TYPE >> 8, (Math1FuncPtr)FTT_CHAR},
+    {{'c','a',0}, ITF_TYPE >> 8, (Math1FuncPtr)ITC_ARRAY},
+    {{'f','f',0}, ITF_TYPE >> 8, (Math1FuncPtr)FTT_FLOATF},
+    {{'l',0,0}, ITF_TYPE >> 8, (Math1FuncPtr)FTT_LEN},
+    {{'c',0,0}, ITF_TYPE >> 8, (Math1FuncPtr)FTT_CHAR},
 
-    {{_T('f'),_T('e'),_T('x')}, ITF_MATH2 >> 8, (Math1FuncPtr)(math_di)frexp},
-    {{_T('m'),_T('d'),_T('f')}, ITF_MATH2 >> 8, (Math1FuncPtr)(math_ddp)modf},
+    {{'f','e','x'}, ITF_MATH2 >> 8, (Math1FuncPtr)(math_di)frexp},
+    {{'m','d','f'}, ITF_MATH2 >> 8, (Math1FuncPtr)(math_ddp)modf},
 };
 
-void PlaceFunction(TCHAR *&vb, TCHAR *&sp, ParseInfo *pi, int redefine)
+void PlaceFunction(char *&vb, char *&sp, ParseInfo *pi, int redefine)
 {
     int i;
     ExpressionItem *item = pi->item = AllocItem();
@@ -167,7 +163,7 @@ void PlaceFunction(TCHAR *&vb, TCHAR *&sp, ParseInfo *pi, int redefine)
             // get first argument
             sp++;
             ParseString(sp, *((ExpressionItem **)(&item->param1)));
-            if (*sp == _T(','))
+            if (*sp == ',')
             {
                 // get second argument
                 sp++;
@@ -189,7 +185,7 @@ void PlaceFunction(TCHAR *&vb, TCHAR *&sp, ParseInfo *pi, int redefine)
             item->type = IT_FUNCTION | ITF_USER | i;
             // get arguments list
             ExpressionItem **newplace = ((ExpressionItem **)(&pi->item->param1));
-            while (*sp != _T(')'))
+            while (*sp != ')')
             {
                 *newplace = AllocItem();
                 (*newplace)->type = IT_EXPRESSION;
@@ -202,12 +198,12 @@ void PlaceFunction(TCHAR *&vb, TCHAR *&sp, ParseInfo *pi, int redefine)
         }
     }
 
-    // oops, we need no item for function definition
+    // oops, we need no item for function defenition
     CleanupItems(item); pi->item = NULL;
 
     // it's user function define
     int flags = 0;
-    TCHAR buffer[128], *buf = buffer;
+    char buffer[128], *buf = buffer;
 
     // workaround for redefine flag - if the function already present,
     // it will be cleared and redefined
@@ -223,10 +219,10 @@ void PlaceFunction(TCHAR *&vb, TCHAR *&sp, ParseInfo *pi, int redefine)
         sp++;
         switch (*sp)
         {
-        case _T(' '):
+        case ' ':
             break;
-        case _T(','):
-        case _T(')'):
+        case ',':
+        case ')':
             if (buf > buffer)
             {
                 *buf = 0;
@@ -238,7 +234,7 @@ void PlaceFunction(TCHAR *&vb, TCHAR *&sp, ParseInfo *pi, int redefine)
                 flags <<= 1;
             }
             break;
-        case _T('&'):
+        case '&':
             flags |= 1;
             break;
         default:
@@ -246,7 +242,7 @@ void PlaceFunction(TCHAR *&vb, TCHAR *&sp, ParseInfo *pi, int redefine)
             break;
         }
     }
-    while (*sp != _T(')'));
+    while (*sp != ')');
 
     // prepare flag for fast analisys
     for (i = 0; i < f->varsnum; i++)
@@ -257,7 +253,7 @@ void PlaceFunction(TCHAR *&vb, TCHAR *&sp, ParseInfo *pi, int redefine)
     }
 
     // find nearest round bracket - function body
-    while (*sp != _T('(') && *sp) sp++;
+    while (*sp != '(' && *sp) sp++;
     if (!*sp)
       return;
     sp++;
@@ -269,17 +265,17 @@ void PlaceFunction(TCHAR *&vb, TCHAR *&sp, ParseInfo *pi, int redefine)
 
 #ifdef _DEBUG
   // dump function (in debug mode)
-  TCHAR place[1024];
-  wsprintf(place, _T("function %s("), f->name);
+  char place[1024];
+  wsprintf(place, "function %s(", f->name);
   flags = f->varflags;
   for (i = 0; i < f->varsnum; i++)
   {
-    if (flags&1) lstrcat(place, _T("&"));
+    if (flags&1) lstrcat(place, "&");
     lstrcat(place, UserVars[f->vars[i]].name);
-    if (i < f->varsnum-1) lstrcat(place, _T(", "));
+    if (i < f->varsnum-1) lstrcat(place, ", ");
     flags >>= 1;
   }
-  lstrcat(place, _T(")"));
+  lstrcat(place, ")");
   PrintTree(f->root, place);
 #endif
 }
@@ -294,7 +290,7 @@ void PlaceFunction(TCHAR *&vb, TCHAR *&sp, ParseInfo *pi, int redefine)
 #define PO_USESPRE     0x40 // operator will use pre operand
 #define PO_USESPOST    0x80 // operator will use post operan
 
-void PlaceOp(TCHAR *&vb, int type, int precedence, ParseInfo *pi)
+void PlaceOp(char *&vb, int type, int precedence, ParseInfo *pi)
 {
     PlaceVariable(vb, pi);
     if ((type & PO_UNARYPRE) && (!pi->item))
@@ -302,7 +298,7 @@ void PlaceOp(TCHAR *&vb, int type, int precedence, ParseInfo *pi)
         // uniary pre op
         ExpressionItem *item = AllocItem();
         item->type = type;
-        item->param2 = (EIPARAM) (INT_PTR) precedence;
+        item->param2 = (EIPARAM) precedence;
         item->next = pi->OpsStack;
         pi->OpsStack = item;
     }
@@ -325,7 +321,7 @@ void PlaceOp(TCHAR *&vb, int type, int precedence, ParseInfo *pi)
         } else
         {
             // binary operator
-            item->param2 = (EIPARAM) (INT_PTR) precedence;
+            item->param2 = (EIPARAM) precedence;
             item->next = pi->OpsStack;
             pi->OpsStack = item;
         }
@@ -336,54 +332,54 @@ void PlaceOp(TCHAR *&vb, int type, int precedence, ParseInfo *pi)
 const OpStruct Operators[OPSNUM] =
 {
 // three byte ops
-{{_T('>'),_T('>'),_T('=')}, 14, ITO_SHR | PO_PRENONCONST | PO_LASTOP | PO_SET | PO_USESPRE | PO_USESPOST},
-{{_T('<'),_T('<'),_T('=')}, 14, ITO_SHL | PO_PRENONCONST | PO_LASTOP | PO_SET | PO_USESPRE | PO_USESPOST},
+{{'>','>','='}, 14, ITO_SHR | PO_PRENONCONST | PO_LASTOP | PO_SET | PO_USESPRE | PO_USESPOST},
+{{'<','<','='}, 14, ITO_SHL | PO_PRENONCONST | PO_LASTOP | PO_SET | PO_USESPRE | PO_USESPOST},
 
 // two byte ops
 // !!! don't forget to change Set Operator Precedence !!!
-{_T("-="), 14, ITO_MINUS | PO_PRENONCONST | PO_LASTOP | PO_SET | PO_USESPRE | PO_USESPOST},
-{_T("+="), 14, ITO_PLUS | PO_PRENONCONST | PO_LASTOP | PO_SET | PO_USESPRE | PO_USESPOST},
-{_T("/="), 14, ITO_DIV | PO_PRENONCONST | PO_LASTOP | PO_SET | PO_USESPRE | PO_USESPOST},
-{_T("*="), 14, ITO_MUL | PO_PRENONCONST | PO_LASTOP | PO_SET | PO_USESPRE | PO_USESPOST},
-{_T("|="), 14, ITO_OR | PO_PRENONCONST | PO_LASTOP | PO_SET | PO_USESPRE | PO_USESPOST},
-{_T("&="), 14, ITO_AND | PO_PRENONCONST | PO_LASTOP | PO_SET | PO_USESPRE | PO_USESPOST},
-{_T("^="), 14, ITO_XOR | PO_PRENONCONST | PO_LASTOP | PO_SET | PO_USESPRE | PO_USESPOST},
-{_T("%="), 14, ITO_MOD | PO_PRENONCONST | PO_LASTOP | PO_SET | PO_USESPRE | PO_USESPOST},
-{_T("--"), 2, ITO_DEC | PO_POSTNONCONST | PO_PRENONCONST | PO_UNARYPRE | PO_UNARYPOST | PO_SET | PO_USESPRE | PO_USESPOST},
-{_T("++"), 2, ITO_INC | PO_POSTNONCONST | PO_PRENONCONST | PO_UNARYPRE | PO_UNARYPOST | PO_SET | PO_USESPRE | PO_USESPOST},
-{_T(">>"), 6, ITO_SHR | PO_USESPRE | PO_USESPOST},
-{_T("<<"), 6, ITO_SHL | PO_USESPRE | PO_USESPOST},
+{"-=", 14, ITO_MINUS | PO_PRENONCONST | PO_LASTOP | PO_SET | PO_USESPRE | PO_USESPOST},
+{"+=", 14, ITO_PLUS | PO_PRENONCONST | PO_LASTOP | PO_SET | PO_USESPRE | PO_USESPOST},
+{"/=", 14, ITO_DIV | PO_PRENONCONST | PO_LASTOP | PO_SET | PO_USESPRE | PO_USESPOST},
+{"*=", 14, ITO_MUL | PO_PRENONCONST | PO_LASTOP | PO_SET | PO_USESPRE | PO_USESPOST},
+{"|=", 14, ITO_OR | PO_PRENONCONST | PO_LASTOP | PO_SET | PO_USESPRE | PO_USESPOST},
+{"&=", 14, ITO_AND | PO_PRENONCONST | PO_LASTOP | PO_SET | PO_USESPRE | PO_USESPOST},
+{"^=", 14, ITO_XOR | PO_PRENONCONST | PO_LASTOP | PO_SET | PO_USESPRE | PO_USESPOST},
+{"%=", 14, ITO_MOD | PO_PRENONCONST | PO_LASTOP | PO_SET | PO_USESPRE | PO_USESPOST},
+{"--", 2, ITO_DEC | PO_POSTNONCONST | PO_PRENONCONST | PO_UNARYPRE | PO_UNARYPOST | PO_SET | PO_USESPRE | PO_USESPOST},
+{"++", 2, ITO_INC | PO_POSTNONCONST | PO_PRENONCONST | PO_UNARYPRE | PO_UNARYPOST | PO_SET | PO_USESPRE | PO_USESPOST},
+{">>", 6, ITO_SHR | PO_USESPRE | PO_USESPOST},
+{"<<", 6, ITO_SHL | PO_USESPRE | PO_USESPOST},
 
 // logical
-{_T("&&"), 12, ITO_LAND | PO_USESPRE | PO_USESPOST},
-{_T("||"), 13, ITO_LOR | PO_USESPRE | PO_USESPOST},
+{"&&", 12, ITO_LAND | PO_USESPRE | PO_USESPOST},
+{"||", 13, ITO_LOR | PO_USESPRE | PO_USESPOST},
 
 // comparisons
-{_T("<="), 7, ITO_LE | PO_USESPRE | PO_USESPOST},
-{_T("=<"), 7, ITO_LE | PO_USESPRE | PO_USESPOST},
-{_T(">="), 7, ITO_GE | PO_USESPRE | PO_USESPOST},
-{_T("=>"), 7, ITO_GE | PO_USESPRE | PO_USESPOST},
-{_T("!="), 8, ITO_NE | PO_USESPRE | PO_USESPOST},
-{_T("=="), 8, ITO_EQ | PO_USESPRE | PO_USESPOST},
+{"<=", 7, ITO_LE | PO_USESPRE | PO_USESPOST},
+{"=<", 7, ITO_LE | PO_USESPRE | PO_USESPOST},
+{">=", 7, ITO_GE | PO_USESPRE | PO_USESPOST},
+{"=>", 7, ITO_GE | PO_USESPRE | PO_USESPOST},
+{"!=", 8, ITO_NE | PO_USESPRE | PO_USESPOST},
+{"==", 8, ITO_EQ | PO_USESPRE | PO_USESPOST},
 
 // single byte ops
 // !!! don't forget to change Set Operator Precedence !!!
-{_T("="), 14, ITO_SET | PO_PRENONCONST | PO_LASTOP | PO_SET | PO_USESPOST},
-{_T("+"), 5, ITO_PLUS | PO_USESPRE | PO_USESPOST},
-{_T("-"), 5, ITO_MINUS | PO_USESPRE | PO_USESPOST | PO_UNARYPRE},
-{_T("*"), 4, ITO_MUL | PO_USESPRE | PO_USESPOST | PO_UNARYPRE},
-{_T("/"), 4, ITO_DIV | PO_USESPRE | PO_USESPOST},
-{_T("%"), 4, ITO_MOD | PO_USESPRE | PO_USESPOST},
-{_T("<"), 7, ITO_LS | PO_USESPRE | PO_USESPOST},
-{_T(">"), 7, ITO_GR | PO_USESPRE | PO_USESPOST},
-{_T("&"), 9, ITO_AND | PO_USESPRE | PO_USESPOST | PO_UNARYPRE},
-{_T("|"), 11, ITO_OR | PO_USESPRE | PO_USESPOST},
-{_T("^"), 10, ITO_XOR | PO_USESPRE | PO_USESPOST},
-{_T("~"), 3, ITO_NOT | PO_USESPOST | PO_UNARYPRE},
-{_T("!"), 3, ITO_LNOT |PO_USESPOST | PO_UNARYPRE}
+{"=", 14, ITO_SET | PO_PRENONCONST | PO_LASTOP | PO_SET | PO_USESPOST},
+{"+", 5, ITO_PLUS | PO_USESPRE | PO_USESPOST},
+{"-", 5, ITO_MINUS | PO_USESPRE | PO_USESPOST | PO_UNARYPRE},
+{"*", 4, ITO_MUL | PO_USESPRE | PO_USESPOST | PO_UNARYPRE},
+{"/", 4, ITO_DIV | PO_USESPRE | PO_USESPOST},
+{"%", 4, ITO_MOD | PO_USESPRE | PO_USESPOST},
+{"<", 7, ITO_LS | PO_USESPRE | PO_USESPOST},
+{">", 7, ITO_GR | PO_USESPRE | PO_USESPOST},
+{"&", 9, ITO_AND | PO_USESPRE | PO_USESPOST | PO_UNARYPRE},
+{"|", 11, ITO_OR | PO_USESPRE | PO_USESPOST},
+{"^", 10, ITO_XOR | PO_USESPRE | PO_USESPOST},
+{"~", 3, ITO_NOT | PO_USESPOST | PO_UNARYPRE},
+{"!", 3, ITO_LNOT |PO_USESPOST | PO_UNARYPRE}
 };
 
-void CheckForOperator(TCHAR *&sp, TCHAR *&vb, ParseInfo *pi)
+void CheckForOperator(char *&sp, char *&vb, ParseInfo *pi)
 {
     for (int op = 0; op < OPSNUM; op++)
     {
@@ -401,44 +397,44 @@ void CheckForOperator(TCHAR *&sp, TCHAR *&vb, ParseInfo *pi)
     }
 }
 
-void ParseString(TCHAR *&sp, ExpressionItem* &itemplace)
+void ParseString(char *&sp, ExpressionItem* &itemplace)
 {
     ParseInfo pi = {0, NULL, NULL, &itemplace, &itemplace};
 
     int redefine = 0;
-    TCHAR *vb = pi.valbuf;
+    char *vb = pi.valbuf;
     // cycle until current expression end
-    while ((*sp != 0) && (*sp != _T(')')) && (*sp != _T('}')) &&
-        (*sp != _T(']')) && (*sp != _T(',')))
+    while ((*sp != 0) && (*sp != ')') && (*sp != '}') &&
+        (*sp != ']') && (*sp != ','))
     {
         int processed = 1;
         switch (*sp)
         {
-        case _T(' '):
-        case _T('\t'):
+        case ' ':
+        case '\t':
             sp++;
             break;
-        case _T(';'):
-            // expression delimiter
+        case ';':
+            // expression delimeter
             PlaceNewItem(vb, &pi, 255);
             if (*pi.root) pi.SetupNewRoot = 1;
             sp++;
             break;
-        case _T('0'): case _T('1'): case _T('2'): case _T('3'): case _T('4'):
-        case _T('5'): case _T('6'): case _T('7'): case _T('8'): case _T('9'):
+        case '0': case '1': case '2': case '3': case '4':
+        case '5': case '6': case '7': case '8': case '9':
             // variable & function names could contain numbers as non first chars
             if (vb > pi.valbuf)
             {
                 processed = FALSE;
                 break;
             }
-        case _T('\''): case _T('\"'): case _T('`'):
+        case '\'': case '\"': case '`':
             // constant meet
             pi.item = AllocItem();
             StringToItem(sp, pi.item, STI_STRING | STI_FLOAT | STI_INT);
             break;
 
-        case _T('('): // start of function or expression
+        case '(': // start of function or expression
             if (vb > pi.valbuf)
             {
                 // thats function
@@ -448,14 +444,14 @@ void ParseString(TCHAR *&sp, ExpressionItem* &itemplace)
                 // expression
                 sp++;
                 ParseString(sp, pi.item);
-                if (*sp == _T(')')) sp++;
+                if (*sp == ')') sp++;
             }
             redefine = 0;
             break;
 
-        case _T('#'):   // start of one of logical expressions
+        case '#':   // start of one of logical expresions
             sp++;
-            if ((*sp != _T('[')) && (*sp != _T('{')))
+            if ((*sp != '[') && (*sp != '{'))
             {
                 // function redefine flag
                 redefine = 1;
@@ -464,14 +460,14 @@ void ParseString(TCHAR *&sp, ExpressionItem* &itemplace)
             {
                 pi.item = AllocItem();
                 // IF or WHILE
-                pi.item->type = ((*sp == _T('['))?(IT_LOGIC | ITL_IF):(IT_LOGIC | ITL_WHILE));
+                pi.item->type = ((*sp == '[')?(IT_LOGIC | ITL_IF):(IT_LOGIC | ITL_WHILE));
                 // first expr - logic statement
                 sp++;
 
                 ParseString(sp, *((ExpressionItem **)(&pi.item->param1)));
                 // ok, second expr - then, third - else statement.. others???
                 ExpressionItem **newplace = ((ExpressionItem **)(&pi.item->param2));
-                while (*sp == _T(','))
+                while (*sp == ',')
                 {
                     *newplace = AllocItem();
                     (*newplace)->type = IT_EXPRESSION;
@@ -483,14 +479,14 @@ void ParseString(TCHAR *&sp, ExpressionItem* &itemplace)
             sp++;
             break;
 
-        case _T('['):
+        case '[':
             {
             // thats array access
             PlaceOp(vb, IT_ARRAY | ITA_ACCESS | PO_UNARYPOST, 1, &pi);
             sp++;
             // item index
             ParseString(sp, *(ExpressionItem **)&(pi.item->param2));
-            if (*sp == _T(','))
+            if (*sp == ',')
             {
                 // two indexes - string access
                 ExpressionItem *it = AllocItem();
@@ -506,9 +502,9 @@ void ParseString(TCHAR *&sp, ExpressionItem* &itemplace)
             }
             break;
 
-        case _T('{'):   // start of array define
+        case '{':   // start of array define
             {
-                // array define - consists of array copy operator and array define itself
+                // array define - constists of array copy operator and array define itself
 
                 // type conversion item (to create a copy of array)
                 pi.item = AllocItem();
@@ -520,7 +516,7 @@ void ParseString(TCHAR *&sp, ExpressionItem* &itemplace)
                 ArrayDesc *ad = *((ArrayDesc**)&(ai->param1));
 
                 // parse array initializers
-                while (*sp != _T('}'))
+                while (*sp != '}')
                 {
                     sp++;
                     ParseString(sp, ad->array[ad->count]);
@@ -531,9 +527,9 @@ void ParseString(TCHAR *&sp, ExpressionItem* &itemplace)
                 sp++;
             }
             break;
-        case _T('-'): case _T('+'): case _T('<'): case _T('='): case _T('>'):
-        case _T('/'): case _T('*'): case _T('~'): case _T('^'): case _T('!'):
-        case _T('&'): case _T('|'): case _T('%'):
+        case '-': case '+': case '<': case '=': case '>':
+        case '/': case '*': case '~': case '^': case '!':
+        case '&': case '|': case '%':
             CheckForOperator(sp, vb, &pi);
             break;
 
@@ -598,8 +594,8 @@ void CleanupItems(ExpressionItem* &itemplace)
 #ifdef _DEBUG
 HANDLE myfile;
 
-TCHAR *opsnames[] = {_T(""), _T("-"), _T("+"), _T("<<"), _T(">>"), _T("*"), _T("/"), _T("="), _T("&&"), _T("||"), _T("++"), _T("--"),
-_T("=<"), _T(">="), _T("!="), _T("=="), _T("<"), _T(">"), _T("&"), _T("%"), _T("|"), _T("^"), _T("~"), _T("!")};
+char *opsnames[] = {"", "-", "+", "<<", ">>", "*", "/", "=", "&&", "||", "++", "--",
+"=<", ">=", "!=", "==", "<", ">", "&", "%", "|", "^", "~", "!"};
 
 void PrintNode(int index, int spaces, ExpressionItem* itemplace)
 {
@@ -609,7 +605,7 @@ void PrintNode(int index, int spaces, ExpressionItem* itemplace)
     do
     {
         DWORD wrote;
-        TCHAR buffer[1024], *place = buffer;
+        char buffer[1024], *place = buffer;
         for (int k = 0; k < spaces; k++)
             *(place++) = 32;
         *place = 0;
@@ -617,100 +613,100 @@ void PrintNode(int index, int spaces, ExpressionItem* itemplace)
         switch (item->type & ITEMTYPE)
         {
         case  IT_EXPRESSION:
-            wsprintf(place, _T("Expression Place-Holder   "));
+            wsprintf(place, "Expression Place-Holder   ");
             break;
         case  IT_CONST:
             switch (item->type & ITEMSUBTYPE)
             {
             case ITC_STRING:
-                wsprintf(place, _T("String: \"%s\""), (TCHAR *) item->param1);
+                wsprintf(place, "String: \"%s\"", (char *) item->param1);
                 break;
             case ITC_INT:
-                wsprintf(place, _T("Int: "));
+                wsprintf(place, "Int: ");
                 itoa64(*((__int64*)&(item->param1)), place+5);
                 break;
             case ITC_FLOAT:
-                wsprintf(place, _T("Float: "));
+                wsprintf(place, "Float: ");
                 FloatFormat(place+7, *((double*)&(item->param1)), 6);
                 break;
             case ITC_ARRAY:
                 ArrayDesc *ad = (ArrayDesc*) item->param1;
-                wsprintf(place, _T("Array, ptr %08X, size %d, count %d, references %d"),
+                wsprintf(place, "Array, ptr %08X, size %d, count %d, references %d",
                     ad->array, ad->size, ad->count, ad->references);
                 break;
             }
-            _tcscat(place, _T("    "));
+            strcat(place, "    ");
             break;
         case IT_OPERATOR:
-            wsprintf(place, _T("Op: %s%s    "), opsnames[(item->type & ITEMSUBTYPE) >> 8], (item->type & PO_SET)?(_T("(=)")):(_T("")));
+            wsprintf(place, "Op: %s%s    ", opsnames[(item->type & ITEMSUBTYPE) >> 8], (item->type & PO_SET)?("(=)"):(""));
             break;
         case IT_VARIABLE:
             switch (item->type & ITEMSUBTYPE)
             {
             case ITV_NSIS:
                 {
-                TCHAR buffer[128];
+                char buffer[128];
                 buffer[0] = NSISVariablesNames[item->type & ITEMOPTIONS][0];
                 buffer[1] = NSISVariablesNames[item->type & ITEMOPTIONS][1];
                 buffer[2] = 0;
-                wsprintf(place, _T("Var: %s (%d)   "),
+                wsprintf(place, "Var: %s (%d)   ",
                     buffer,
                     item->type & ITEMOPTIONS);
                 }
                 break;
             case ITV_USER:
-                wsprintf(place, _T("Var: %s (%d)   "), UserVars[item->type & ITEMOPTIONS].name, item->type & ITEMOPTIONS);
+                wsprintf(place, "Var: %s (%d)   ", UserVars[item->type & ITEMOPTIONS].name, item->type & ITEMOPTIONS);
                 break;
             case ITV_STACK:
-                wsprintf(place, _T("Plugin Stack   "));
+                wsprintf(place, "Plugin Stack   ");
                 break;
             case ITV_NSTACK:
-                wsprintf(place, _T("NSIS Stack   "));
+                wsprintf(place, "NSIS Stack   ");
                 break;
             }
             break;
         case IT_LOGIC:
             if ((item->type & ITEMSUBTYPE) == ITL_IF)
-                wsprintf(place, _T("IF "));
+                wsprintf(place, "IF ");
             else
-                wsprintf(place, _T("WHILE "));
+                wsprintf(place, "WHILE ");
             break;
         case IT_FUNCTION:
             if (((item->type & ITEMSUBTYPE) == ITF_MATH1) ||
                 ((item->type & ITEMSUBTYPE) == ITF_MATH2) ||
                 ((item->type & ITEMSUBTYPE) == ITF_TYPE))
             {
-                TCHAR buffer[128];
+                char buffer[128];
                 buffer[0] = (MathFunctions[item->type &ITEMOPTIONS].name)[0];
                 buffer[1] = (MathFunctions[item->type &ITEMOPTIONS].name)[1];
                 buffer[2] = (MathFunctions[item->type &ITEMOPTIONS].name)[2];
                 buffer[3] = 0;
-                wsprintf(place, _T("Built-In Function %s() [%d] "),
+                wsprintf(place, "Built-In Function %s() [%d] ",
                     buffer,
                     item->type &ITEMOPTIONS);
             }
             else
             {
                 UserFunc *f = &(UserFuncs[item->type & ITEMOPTIONS]);
-                wsprintf(place, _T("User Function: %s("), f->name);
+                wsprintf(place, "User Function: %s(", f->name);
                 int flags = f->varflags;
                 for (int i = 0; i < f->varsnum; i++)
                 {
-                    if (flags&1) lstrcat(place, _T("&"));
+                    if (flags&1) lstrcat(place, "&");
                     lstrcat(place, UserVars[f->vars[i]].name);
-                    if (i < f->varsnum-1) lstrcat(place, _T(", "));
+                    if (i < f->varsnum-1) lstrcat(place, ", ");
                     flags >>= 1;
                 }
-                lstrcat(place, _T(")   "));
+                lstrcat(place, ")   ");
             }
             break;
         case IT_ARRAY:
-            wsprintf(place, _T("Array access []   "));
+            wsprintf(place, "Array access []   ");
             break;
         }
         place += lstrlen(place);
-        wsprintf(place, _T("Addr: %08X Type: %08X   Next: %08X  Param1: %08X  Param2: %08X"), item, item->type, item->next, item->param1, item->param2);
-        lstrcat(place, _T("\n"));
+        wsprintf(place, "Addr: %08X Type: %08X   Next: %08X  Param1: %08X  Param2: %08X", item, item->type, item->next, item->param1, item->param2);
+        lstrcat(place, "\n");
         WriteFile(myfile, buffer, lstrlen(buffer), &wrote, NULL);
         if (((item->type & ITEMTYPE) != IT_CONST) && ((item->type & (ITEMTYPE|ITEMSUBTYPE)) != (IT_VARIABLE|ITV_ARRITEM)))
         {
@@ -723,13 +719,13 @@ void PrintNode(int index, int spaces, ExpressionItem* itemplace)
                 show = 1;
             if (show)
             {
-                wsprintf(place, _T("Sub1:\n"));
+                wsprintf(place, "Sub1:\n");
                 WriteFile(myfile, buffer, lstrlen(buffer), &wrote, NULL);
             }
             PrintNode(1, spaces + 4, *((ExpressionItem**) &item->param1));
             if (show)
             {
-                wsprintf(place, _T("Sub2:\n"));
+                wsprintf(place, "Sub2:\n");
                 WriteFile(myfile, buffer, lstrlen(buffer), &wrote, NULL);
             }
             PrintNode(2, spaces + 4, *((ExpressionItem**) &item->param2));
@@ -747,12 +743,12 @@ void PrintNode(int index, int spaces, ExpressionItem* itemplace)
     } while (item != NULL);
 }
 
-void PrintTree(ExpressionItem *root, TCHAR *str)
+void PrintTree(ExpressionItem *root, char *str)
 {
-    myfile = CreateFile(_T("d:\\math.debug"), GENERIC_ALL, FILE_SHARE_READ, NULL, OPEN_ALWAYS, 0, 0);
+    myfile = CreateFile("d:\\math.debug", GENERIC_ALL, FILE_SHARE_READ, NULL, OPEN_ALWAYS, 0, 0);
     SetFilePointer(myfile, 0, NULL, FILE_END);
-    TCHAR buffer[1024]; DWORD wrote;
-    wsprintf(buffer, _T("New tree for \'%s\'\n"), str);
+    char buffer[1024]; DWORD wrote;
+    wsprintf(buffer, "New tree for \'%s\'\n", str);
     WriteFile(myfile, buffer, lstrlen(buffer), &wrote, NULL);
 
     PrintNode(0, 4, root);
@@ -780,7 +776,7 @@ void CopyArray(ExpressionItem *&item)
 
 void ItemToType(ExpressionItem* &item, int type)
 {
-    TCHAR *buffer, *bp;
+    char *buffer, *bp;
     if (item == NULL) return;
     int itemt = item->type & ITEMTYPE, oldtype = item->type & ITEMSUBTYPE;
 
@@ -800,7 +796,7 @@ void ItemToType(ExpressionItem* &item, int type)
             *((double *)&(item->param1)) = (double) *((__int64 *)&(item->param1));
         else
         {
-            bp = buffer = (TCHAR*) item->param1;
+            bp = buffer = (char*) item->param1;
             StringToItem(buffer, item, STI_FLOAT);
             dbgGlobalFree(bp);
         }
@@ -810,7 +806,7 @@ void ItemToType(ExpressionItem* &item, int type)
             *((__int64 *)&(item->param1)) = (__int64) *((double *)&(item->param1));
         else
         {
-            bp = buffer = (TCHAR*) item->param1;
+            bp = buffer = (char*) item->param1;
             StringToItem(buffer, item, STI_INT);
             dbgGlobalFree(bp);
         }
@@ -818,7 +814,7 @@ void ItemToType(ExpressionItem* &item, int type)
     case ITC_ARRAY:
         if (oldtype == ITC_STRING)
         {
-            TCHAR *buf = (TCHAR*) item->param1;
+            char *buf = (char*) item->param1;
             int len = lstrlen(buf)+1;
             ExpressionItem *ni = AllocArray(lstrlen(buf)+1);
             ArrayDesc *ad = (ArrayDesc*) ni->param1;
@@ -847,7 +843,7 @@ void SaveResult(ExpressionItem *var, ExpressionItem *result)
     case ITV_NSIS:
         {
             // store string result direct to NSIS variable
-            TCHAR *ptr = g_variables + varindex*g_stringsize;
+            char *ptr = g_variables + varindex*g_stringsize;
             ItemToString(ptr, result);
         }
         break;
@@ -859,7 +855,7 @@ void SaveResult(ExpressionItem *var, ExpressionItem *result)
         break;
     case ITV_ARRITEM:
         {
-            ExpressionItem *&ei = ((ArrayDesc*)(var->param1))->array[(UINT_PTR)(var->param2)];
+            ExpressionItem *&ei = ((ArrayDesc*)(var->param1))->array[(int)var->param2];
             CleanupItems(ei);
             ei = CopyItem(result);
         }
@@ -873,7 +869,7 @@ void SaveResult(ExpressionItem *var, ExpressionItem *result)
         break;
     case ITV_NSTACK:
         {
-            TCHAR *buf = AllocString();
+            char *buf = AllocString();
             ItemToString(buf, result);
             pushstring(buf);
             dbgGlobalFree(buf);
@@ -882,9 +878,9 @@ void SaveResult(ExpressionItem *var, ExpressionItem *result)
     }
 }
 
-void RunAndGetConst(ExpressionItem* from, ExpressionItem* &result, int type)
+void RunAndGetConst(int from, ExpressionItem* &result, int type)
 {
-    RunTree(from, result, type | RTO_NEEDCONST);
+    RunTree(*((ExpressionItem**)&(from)), result, type | RTO_NEEDCONST);
     ItemToType(result, type);
 }
 
@@ -916,7 +912,7 @@ void RunTree(ExpressionItem *from, ExpressionItem* &result, int options)
                     {
                         // nsis
                         result = AllocItem();
-                        TCHAR *variable = getuservariable(ioptions);
+                        char *variable = getuservariable(ioptions);
                         StringToItem(variable, result, options);
                     }
                     break;
@@ -932,7 +928,7 @@ void RunTree(ExpressionItem *from, ExpressionItem* &result, int options)
                 case ITV_ARRITEM:
                     {
                         // array item
-                        ExpressionItem *ei = ((ArrayDesc*)(item->param1))->array[(UINT_PTR)(item->param2)];
+                        ExpressionItem *ei = ((ArrayDesc*)(item->param1))->array[(int)item->param2];
                         if (ei)
                             result = CopyItem(ei);
                         else
@@ -951,7 +947,7 @@ void RunTree(ExpressionItem *from, ExpressionItem* &result, int options)
                 case ITV_NSTACK:
                     {
                         // NSIS stack
-                        TCHAR buffer[1024], *buf = buffer;
+                        char buffer[1024], *buf = buffer;
                         result = AllocItem();
                         popstring(buffer);
                         StringToItem(buf, result, options);
@@ -1115,9 +1111,9 @@ void RunTree(ExpressionItem *from, ExpressionItem* &result, int options)
                 case ITC_STRING:
                     {
                         int ir = -666;
-                        TCHAR *i1 = (item1)?((TCHAR*)item1->param1):(NULL);
-                        TCHAR *i2 = (item2)?((TCHAR*)item2->param1):(NULL);
-                        int sc = (i1 && i2)?(lstrcmp(i1, i2)):((i1)?(1):((i2)?(-1):(0)));
+                        char *i1 = (item1)?((char*)item1->param1):(NULL);
+                        char *i2 = (item2)?((char*)item2->param1):(NULL);
+                       	int sc = (i1 && i2)?(lstrcmp(i1, i2)):((i1)?(1):((i2)?(-1):(0)));
 
                     switch (subtype)
                     {
@@ -1168,7 +1164,7 @@ void RunTree(ExpressionItem *from, ExpressionItem* &result, int options)
                 ExpressionItem *ifbr = *((ExpressionItem**)&(item->param1)),
                     *dobr = *((ExpressionItem**)&(item->param2)),
                     *thbr = NULL, *elbr = NULL;
-                // check do branche for existence
+                // check do branche for existance
                 if (dobr && ifmode)
                 {
                     // then...
@@ -1178,7 +1174,7 @@ void RunTree(ExpressionItem *from, ExpressionItem* &result, int options)
                 }
                 while (true)
                 {
-                    RunAndGetConst((ifbr), result, ITC_INT);
+                    RunAndGetConst((int) ifbr, result, ITC_INT);
                     if (ifmode)
                     {
                         // we need then or else branch?
@@ -1262,27 +1258,26 @@ void RunTree(ExpressionItem *from, ExpressionItem* &result, int options)
                 CleanupItems(si); CleanupItems(var);
             } else if (subtype == ITF_TYPE)
             {
-                INT_PTR newtype = (INT_PTR) MathFunctions[ioptions].fptr;
+                int newtype = (int) MathFunctions[ioptions].fptr;
                 if (newtype < ITC_UNKNOWN)
                 {
                     // get as possibly close to ready expression
-                    int truncatednewtype = (int) newtype; // BUGBUG64: Make sure this is safe for 64-bit, meaning, can newtype be < INT_MIN?
-                    RunAndGetConst((item->param1), result, truncatednewtype);
+                    RunAndGetConst((int)item->param1, result, newtype);
                     if (ioptions == ITFT_CARRAY_ID)
                         CopyArray(result);
                 } else if (newtype == FTT_FLOATF)
                 {
                     // float format function
                     ExpressionItem *arg1, *arg2;
-                    RunAndGetConst((item->param1), arg1, ITC_FLOAT);
+                    RunAndGetConst((int)item->param1, arg1, ITC_FLOAT);
                     double value = *((double*)&(arg1->param1));
-                    RunAndGetConst((item->param2), arg2, ITC_INT);
+                    RunAndGetConst((int)item->param2, arg2, ITC_INT);
                     int format = (int) *((__int64*)&(arg2->param1));
 
                     result = AllocItem();
                     result->type = IT_CONST | ITC_STRING;
                     result->param1 = (EIPARAM)  AllocString();
-                    FloatFormat((TCHAR*) result->param1, value, format);
+                    FloatFormat((char*) result->param1, value, format);
                     CleanupItems(arg1); CleanupItems(arg2);
                 } else if (newtype == FTT_LEN)
                 {
@@ -1302,7 +1297,7 @@ void RunTree(ExpressionItem *from, ExpressionItem* &result, int options)
                     if ((result->type & (ITEMTYPE|ITEMSUBTYPE)) == (IT_CONST|ITC_STRING))
                     {
                         // ok, that's string
-                        int len = lstrlen((TCHAR*)result->param1);
+                        int len = lstrlen((char*)result->param1);
                         dbgGlobalFree((HGLOBAL) result->param1);
                         *((__int64*)&(result->param1)) = (__int64) len;
                         result->type = IT_CONST | ITC_INT;
@@ -1314,7 +1309,7 @@ void RunTree(ExpressionItem *from, ExpressionItem* &result, int options)
                     if ((result->type & (ITEMTYPE|ITEMSUBTYPE)) == (IT_CONST|ITC_STRING))
                     {
                         // ok, that's string - convert first char to int
-                        int chr = (*((TCHAR*)result->param1)) & 0xFF;
+                        int chr = (*((char*)result->param1)) & 0xFF;
                         dbgGlobalFree((HGLOBAL) result->param1);
                         *((__int64*)&(result->param1)) = (__int64) chr;
                         result->type = IT_CONST | ITC_INT;
@@ -1325,8 +1320,8 @@ void RunTree(ExpressionItem *from, ExpressionItem* &result, int options)
                         // ok, that's int - convert to new string (char+0)
                         int chr = (int) (*((__int64*)&(result->param1))) & 0xFF;
                         result->param1 = (EIPARAM)  AllocString();
-                        *((TCHAR*)result->param1) = (TCHAR) chr;
-                        *((TCHAR*)(result->param1+1)) = (TCHAR) 0;
+                        *((char*)result->param1) = (char) chr;
+                        *((char*)(result->param1+1)) = (char) 0;
                         result->type = IT_CONST | ITC_STRING;
                         break;
                     } else CleanupItems(result);
@@ -1334,7 +1329,7 @@ void RunTree(ExpressionItem *from, ExpressionItem* &result, int options)
             } else
             {
                 // oops :-o function call :)
-                RunAndGetConst((item->param1), result, ITC_FLOAT);
+                RunAndGetConst((int)item->param1, result, ITC_FLOAT);
                 double &value = *((double*)&(result->param1));
                 if (subtype == ITF_MATH1)
                 {
@@ -1368,7 +1363,7 @@ void RunTree(ExpressionItem *from, ExpressionItem* &result, int options)
                     {
                         // normal 2-arg math function
                         ExpressionItem *arg2;
-                        RunAndGetConst((item->param2), arg2, ITC_FLOAT);
+                        RunAndGetConst((int)item->param2, arg2, ITC_FLOAT);
                         double value2 = *((double*)&(arg2->param1));
                         value = ((Math2FuncPtr)(MathFunctions[ioptions].fptr))(value, value2);
                         CleanupItems(arg2);
@@ -1385,18 +1380,18 @@ void RunTree(ExpressionItem *from, ExpressionItem* &result, int options)
                 if ((aritem->type & (ITEMTYPE|ITEMSUBTYPE)) == (IT_CONST | ITC_STRING))
                 {
                     // argument is string
-                    TCHAR *str = (TCHAR*)(aritem->param1);
+                    char *str = (char*)(aritem->param1);
                     int len = lstrlen(str);
                     // have we two indexes or one?
                     if ((*((ExpressionItem **) &(item->param2)))->type != IT_EXPRESSION)
                     {
                         // one index - user need a char
-                        RunAndGetConst((item->param2), index, ITC_INT);
+                        RunAndGetConst((int)item->param2, index, ITC_INT);
 
                         int pos = (int) *((__int64*)&(index->param1));
                         if (pos < 0) pos += len; // -index - means from end
                         if ((pos > len) || (pos < 0))
-                            *str = 0; // index is across string boundaries
+                            *str = 0; // index is accross string boundaries
                         else
                         {
                             // new string - just a single char
@@ -1411,7 +1406,7 @@ void RunTree(ExpressionItem *from, ExpressionItem* &result, int options)
                         if ((*((ExpressionItem **) &(item->param2)))->param1 == 0)
                             index = AllocItem();
                         else
-                            RunAndGetConst(((*((ExpressionItem **) &(item->param2)))->param1), index, ITC_INT);
+                            RunAndGetConst((int)(*((ExpressionItem **) &(item->param2)))->param1, index, ITC_INT);
                         if ((*((ExpressionItem **) &(item->param2)))->next->param1 == 0)
                         {
                             // if second index is skipped -> -1 (till last char)
@@ -1419,7 +1414,7 @@ void RunTree(ExpressionItem *from, ExpressionItem* &result, int options)
                             *((__int64*)&(index2->param1)) = -1;
                         }
                         else
-                            RunAndGetConst(((*((ExpressionItem **) &(item->param2)))->next->param1), index2, ITC_INT);
+                            RunAndGetConst((int)(*((ExpressionItem **) &(item->param2)))->next->param1, index2, ITC_INT);
 
                         // ok, we've got two indexes
                         int pos1 = (int) *((__int64*)&(index->param1));
@@ -1433,7 +1428,7 @@ void RunTree(ExpressionItem *from, ExpressionItem* &result, int options)
                         if (pos2 >= len) pos2 = len-1;
 
                         // copy string part
-                        TCHAR* lpos = str + (pos2-pos1);
+                        char* lpos = str + (pos2-pos1);
                         while (str <= lpos)
                         {
                             *str = *(str + pos1);
@@ -1448,16 +1443,16 @@ void RunTree(ExpressionItem *from, ExpressionItem* &result, int options)
                 } else
                 {
                     // argument is array
-                    RunAndGetConst((item->param2), index, ITC_INT);
+                    RunAndGetConst((int)item->param2, index, ITC_INT);
 
                     // convert array pointer to array item pointer
                     aritem->type = IT_VARIABLE | ITV_ARRITEM;
                     aritem->param2 = (EIPARAM) *((__int64*)&(index->param1));
 
                     ArrayDesc *ad = (ArrayDesc*)aritem->param1;
-                    if ((EIPtrToInt(aritem->param2)) >= ad->count)
+                    if (((int)aritem->param2) >= ad->count)
                     {
-                        ad->count = (EIPtrToInt(aritem->param2))+1;
+                        ad->count = ((int)aritem->param2)+1;
                         while (ad->count > ad->size)
                         {
                             // resize array
@@ -1495,11 +1490,11 @@ HINSTANCE g_hInstance;
 
 extern "C"
 void __declspec(dllexport) Script(HWND hwndParent, int string_size,
-                                      TCHAR *variables, stack_t **stacktop,
+                                      char *variables, stack_t **stacktop,
                                       extra_parameters *extra)
 {
   EXDLL_INIT();
-  TCHAR *buffer = AllocString(), *buf = buffer;
+  char *buffer = AllocString(), *buf = buffer;
   ExpressionItem *root = NULL; // root of current tree
 
   // keep loaded to save user defined variables

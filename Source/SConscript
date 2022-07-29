@@ -19,14 +19,10 @@ makensis_files = Split("""
 	Plugins.cpp
 	ResourceEditor.cpp
 	ResourceVersionInfo.cpp
-	BinInterop.cpp
 	script.cpp
-	scriptpp.cpp
 	ShConstants.cpp
 	strlist.cpp
 	tokens.cpp
-	tstring.cpp
-	utf.cpp
 	util.cpp
 	winchar.cpp
 	writer.cpp
@@ -50,18 +46,19 @@ lzma_files = Split("""
 	7zip/Common/CRC.cpp
 """)
 
+zlib_files = Split("""
+	zlib/deflate.c
+	zlib/trees.c
+""")
+
 libs = Split("""
 	gdi32
 	user32
 	pthread
 	iconv
-	shlwapi
-	oleaut32
-	version
-	shell32
 """)
 
-Import('env AddAvailableLibs AddZLib')
+Import('env AddAvailableLibs')
 
 ##### Use available libraries
 
@@ -71,11 +68,9 @@ if env['PLATFORM'] == 'win32':
 	libs += ['version']
 
 AddAvailableLibs(env, libs)
-AddZLib(env, env['PLATFORM'], 'install-compiler')
 
 ##### Defines
 
-env.Append(CPPDEFINES = ['MAKENSIS'])
 env.Append(CPPDEFINES = ['_WIN32_IE=0x0500'])
 
 ##### Set PCH
@@ -92,7 +87,7 @@ lzma_files = lzma_env.Object(lzma_files)
 
 ##### Compile makensis
 
-files = makensis_files + bzip2_files + lzma_files
+files = makensis_files + bzip2_files + lzma_files + zlib_files
 
 makensis = env.Program(target, files)
 

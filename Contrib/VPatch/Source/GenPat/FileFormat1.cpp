@@ -22,8 +22,6 @@
 // 2. Altered source versions must be plainly marked as such, and must not be
 //    misrepresented as being the original software.
 // 3. This notice may not be removed or altered from any source distribution.
-//
-// Reviewed for Unicode support by Jim Park -- 08/29/2007
 
 #include "FileFormat1.h"
 #include "GlobalTypes.h"
@@ -84,7 +82,7 @@ namespace FileFormat1 {
     writeDword(f,currentCount);
   }
 
-  TFileOffset removeExistingPatch(bistream& in, TFileOffset inSize, bostream& out, TChecksum* removeCRC, bool existenceIsError) {
+  TFileOffset removeExistingPatch(bistream& in, TFileOffset inSize, bostream& out, TChecksum* removeCRC, bool existanceIsError) {
     TFileOffset fileCount = 0x80000000;        // MD5 mode
     if(in.bad() || in.eof() || (inSize == 0)) {        // empty file/does not yet exist
       writeDword(out,MAGIC_VPAT);
@@ -127,8 +125,8 @@ namespace FileFormat1 {
       in.seekg(bodySize,ios::cur);
       TFileOffset endOffset = in.tellg();
       if(sourceChecksum == *removeCRC) {
-        if(existenceIsError) {
-          throw _T("Source file with the exact same contents already exists in patch!\nUse /R option (replace) to replace it with this patch!");
+        if(existanceIsError) {
+          throw "Source file with the exact same contents already exists in patch!\nUse /R option (replace) to replace it with this patch!";
         }
         fileCount--;
       } else {
@@ -194,7 +192,7 @@ namespace FileFormat1 {
       // calculate area inbetween this block and the next
       TFileOffset notFoundStart = current->targetOffset+current->size;
       if(notFoundStart > next->targetOffset) {
-        throw _T("makeBinaryPatch input problem: there was overlap");
+        throw "makeBinaryPatch input problem: there was overlap";
       }
       TFileOffset notFoundSize = next->targetOffset - notFoundStart;
       if(notFoundSize > 0) {

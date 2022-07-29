@@ -3,7 +3,7 @@
  * 
  * This file is a part of NSIS.
  * 
- * Copyright (C) 2002-2022 Amir Szekely <kichik@netvision.net.il> and Contributors
+ * Copyright (C) 2002 Amir Szekely <kichik@netvision.net.il>
  * 
  * Licensed under the zlib/libpng license (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * 
  * This software is provided 'as-is', without any express or implied
  * warranty.
- *
- * Reviewed for Unicode support by Jim Park -- 08/21/2007
  */
 
 #if !defined(AFX_DIALOGTEMPLATE_H__C5A973AF_0F56_4BEC_814A_79318E2EB4AC__INCLUDED_)
@@ -24,7 +22,6 @@
 #endif // _MSC_VER > 1000
 
 #include "Platform.h"
-#include "winchar.h"
 
 #include <vector>
 #include <stdexcept>
@@ -46,8 +43,8 @@ struct DialogItemTemplate {
   DWORD  dwStyle;
   WORD   wId;
 
-  WINWCHAR *szClass;
-  WINWCHAR *szTitle;
+  WCHAR *szClass;
+  WCHAR *szTitle;
   char  *szCreationData;
 
   WORD  wCreateDataSize;
@@ -101,14 +98,14 @@ typedef struct {
   short  cx;
   short  cy;
   WORD   id;
-  WORD   _microsoft_docs_are_wrong;
+  WORD   _miscrosoft_docs_are_wrong;
 } DLGITEMTEMPLATEEX;
 
 #pragma pack()
 
 class CDialogTemplate {
 public:
-  CDialogTemplate(BYTE* pbData, bool build_unicode, unsigned int uCodePage=CP_ACP);
+  CDialogTemplate(BYTE* pbData, unsigned int uCodePage=CP_ACP);
   virtual ~CDialogTemplate();
 
   short GetWidth();
@@ -116,33 +113,27 @@ public:
   DialogItemTemplate* GetItem(WORD wId);
   DialogItemTemplate* GetItemByIdx(DWORD i);
   int   RemoveItem(WORD wId);
-  void  SetFont(TCHAR* szFaceName, WORD wFontSize);
+  void  SetFont(char* szFaceName, WORD wFontSize);
   void  AddItem(DialogItemTemplate item);
 #ifdef _WIN32
   HWND  CreateDummyDialog();
 #endif
   void  MoveAll(short x, short y);
   void  Resize(short x, short y);
+#ifdef _WIN32
   void  PixelsToDlgUnits(short& x, short& y);
   void  DlgUnitsToPixels(short& x, short& y);
-#ifdef _WIN32
-  static inline bool SupportsDialogUnitComputation() { return true; }
-  void  PixelsToDlgUnits(SIZE& siz);
-  SIZE  GetStringSize(WORD id, TCHAR *str);
-  void  RTrimToString(WORD id, TCHAR *str, int margins);
-  void  LTrimToString(WORD id, TCHAR *str, int margins);
-  void  CTrimToString(WORD id, TCHAR *str, int margins);
-#else
-  static inline bool SupportsDialogUnitComputation() { return false; }
+  SIZE  GetStringSize(WORD id, char *str);
+  void  RTrimToString(WORD id, char *str, int margins);
+  void  LTrimToString(WORD id, char *str, int margins);
+  void  CTrimToString(WORD id, char *str, int margins);
 #endif
   void  ConvertToRTL();
   BYTE* Save(DWORD& dwSize);
-  static void FreeSavedTemplate(BYTE*pDT) { delete [] pDT; }
   DWORD GetSize();
 
 private:
   bool  m_bExtended;
-  bool  m_build_unicode;
 
   DWORD m_dwHelpId; // Extended only
 
@@ -153,16 +144,16 @@ private:
   DWORD m_dwExtStyle;
   DWORD m_dwStyle;
 
-  WINWCHAR *m_szMenu;
-  WINWCHAR *m_szClass;
-  WINWCHAR *m_szTitle;
+  WCHAR *m_szMenu;
+  WCHAR *m_szClass;
+  WCHAR *m_szTitle;
 
    // Only if DS_FONT style is set
   short m_sFontSize;
   short m_sFontWeight; // Extended only
   BYTE  m_bItalic; // Extended only
   BYTE  m_bCharset; // Extended only
-  WINWCHAR *m_szFont;
+  WCHAR *m_szFont;
 
   // For (en/de)coding Unicode
   unsigned int m_uCodePage;

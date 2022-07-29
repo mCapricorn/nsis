@@ -17,8 +17,6 @@
   2. Altered source versions must be plainly marked as such, and must not be
      misrepresented as being the original software.
   3. This notice may not be removed or altered from any source distribution.
-
-  Unicode support by Jim Park -- 08/24/2007
 */
 #include <windows.h>
 #include <stdio.h>
@@ -30,7 +28,7 @@
 
 #include <nsis/pluginapi.h> // nsis plugin
 
-void *operator new( size_t num_bytes )
+void *operator new( unsigned int num_bytes )
 {
   return GlobalAlloc(GPTR,num_bytes);
 }
@@ -41,7 +39,7 @@ HMODULE     hModule;
 HWND        g_hwndProgressBar;
 HWND        g_hwndStatic;
 static int  g_cancelled;
-static WNDPROC lpWndProcOld;
+static void *lpWndProcOld;
 
 static UINT uMsgCreate;
 
@@ -58,7 +56,7 @@ static LRESULT CALLBACK ParentWndProc(HWND hwnd, UINT message, WPARAM wParam, LP
 
     if (wParam)
     {
-      childwnd = FindWindowEx((HWND) lParam, NULL, _T("#32770"), NULL);
+      childwnd = FindWindowEx((HWND) lParam, NULL, "#32770", NULL);
       hwndL = GetDlgItem(childwnd, 1016);
       hwndB = GetDlgItem(childwnd, 1027);
       HWND hwndP = GetDlgItem(childwnd, 1004);
@@ -86,8 +84,8 @@ static LRESULT CALLBACK ParentWndProc(HWND hwnd, UINT message, WPARAM wParam, LP
         GetWindowRect(hwndS, &ctlRect);
 
         HWND s = g_hwndStatic = CreateWindow(
-          _T("STATIC"),
-          _T(""),
+          "STATIC",
+          "",
           WS_CHILD | WS_CLIPSIBLINGS | SS_CENTER,
           0,
           wndRect.bottom / 2 - (ctlRect.bottom - ctlRect.top) / 2,
@@ -100,13 +98,13 @@ static LRESULT CALLBACK ParentWndProc(HWND hwnd, UINT message, WPARAM wParam, LP
         );
 
         DWORD dwStyle = WS_CHILD | WS_CLIPSIBLINGS;
-        dwStyle |= GetWindowLongPtr(hwndP, GWL_STYLE) & PBS_SMOOTH;
+        dwStyle |= GetWindowLong(hwndP, GWL_STYLE) & PBS_SMOOTH;
 
         GetWindowRect(hwndP, &ctlRect);
 
         HWND pb = g_hwndProgressBar = CreateWindow(
-          _T("msctls_progress32"),
-          _T(""),
+          "msctls_progress32",
+          "",
           dwStyle,
           0,
           wndRect.bottom / 2 + (ctlRect.bottom - ctlRect.top) / 2,
@@ -118,7 +116,9 @@ static LRESULT CALLBACK ParentWndProc(HWND hwnd, UINT message, WPARAM wParam, LP
           NULL
         );
 
-        LRESULT c = SendMessage(hwndP, PBM_SETBARCOLOR, 0, 0);
+        long c;
+
+        c = SendMessage(hwndP, PBM_SETBARCOLOR, 0, 0);
         SendMessage(hwndP, PBM_SETBARCOLOR, 0, c);
         SendMessage(pb, PBM_SETBARCOLOR, 0, c);
 
@@ -127,7 +127,7 @@ static LRESULT CALLBACK ParentWndProc(HWND hwnd, UINT message, WPARAM wParam, LP
         SendMessage(pb, PBM_SETBKCOLOR, 0, c);
 
         // set font
-        LRESULT hFont = SendMessage((HWND) lParam, WM_GETFONT, 0, 0);
+        long hFont = SendMessage((HWND) lParam, WM_GETFONT, 0, 0);
         SendMessage(pb, WM_SETFONT, hFont, 0);
         SendMessage(s, WM_SETFONT, hFont, 0);
 
@@ -153,7 +153,7 @@ static LRESULT CALLBACK ParentWndProc(HWND hwnd, UINT message, WPARAM wParam, LP
         hwndL = NULL;
       }
 
-      // Prevent weird stuff happening if the cancel button happens to be
+      // Prevent wierd stuff happening if the cancel button happens to be
       // pressed at the moment we are finishing and restore the previous focus
       // and cancel button states
       SendMessage(hwnd, WM_NEXTDLGCTL, (WPARAM)hwndPrevFocus, TRUE);
@@ -180,7 +180,13 @@ static LRESULT CALLBACK ParentWndProc(HWND hwnd, UINT message, WPARAM wParam, LP
   }
   else
   {
-    return CallWindowProc(lpWndProcOld, hwnd, message, wParam, lParam);
+    return CallWindowProc(
+      (WNDPROC) lpWndProcOld,
+      hwnd,
+      message,
+      wParam,
+      lParam
+    );
   }
   return 0;
 }
@@ -191,9 +197,7 @@ extern "C" BOOL APIENTRY DllMain(HINSTANCE _hModule, DWORD  ul_reason_for_call, 
   return TRUE;
 }
 
-#ifndef INT32_MAX
 #define INT32_MAX 0x7fffffff
-#endif
 
 int MulDiv64(int nNumber, __int64 nNumerator, __int64 nDenominator)
 {
@@ -210,7 +214,7 @@ int MulDiv64(int nNumber, __int64 nNumerator, __int64 nDenominator)
 
 static __int64 g_file_size;
 static DWORD g_dwLastTick = 0;
-void progress_callback(const char *msg, __int64 read_bytes)
+void progress_callback(char *msg, __int64 read_bytes)
 {
   // flicker reduction by A. Schiffler
   DWORD dwLastTick = g_dwLastTick;
@@ -219,7 +223,7 @@ void progress_callback(const char *msg, __int64 read_bytes)
   {
     if (dwThisTick - dwLastTick > 500)
     {
-      SetWindowTextA(g_hwndStatic, msg);
+      SetWindowText(g_hwndStatic, msg);
       dwLastTick = dwThisTick;
     }
     if (g_file_size)
@@ -228,7 +232,7 @@ void progress_callback(const char *msg, __int64 read_bytes)
   }
 }
 
-extern char *_strstr(const char *i, const char *s);
+extern char *_strstr(char *i, char *s);
 #define strstr _strstr
 
 extern "C"
@@ -236,12 +240,12 @@ extern "C"
 
 __declspec(dllexport) void download (HWND   parent,
               int    string_size,
-              TCHAR   *variables,
+              char   *variables,
               stack_t **stacktop)
 {
   char buf[1024];
   char url[1024];
-  TCHAR filenameT[1024];
+  char filename[1024];
   static char proxy[1024];
   BOOL bSuccess=FALSE;
   int timeout_ms=30000;
@@ -249,7 +253,7 @@ __declspec(dllexport) void download (HWND   parent,
   int manualproxy=0;
   int translation_version;
 
-  const char *error=NULL;
+  char *error=NULL;
 
   // translation version 2 & 1
   static char szDownloading[1024]; // "Downloading %s"
@@ -274,92 +278,83 @@ __declspec(dllexport) void download (HWND   parent,
 
   EXDLL_INIT();
 
-  PopStringA(url);
-  if (!lstrcmpiA(url, "/TRANSLATE2")) {
-    PopStringA(szDownloading);
-    PopStringA(szConnecting);
-    PopStringA(szSecond);
-    PopStringA(szMinute);
-    PopStringA(szHour);
-    PopStringA(szSeconds);
-    PopStringA(szMinutes);
-    PopStringA(szHours);
-    PopStringA(szProgress);
-    PopStringA(url);
+  popstring(url);
+  if (!lstrcmpi(url, "/TRANSLATE2")) {
+    popstring(szDownloading);
+    popstring(szConnecting);
+    popstring(szSecond);
+    popstring(szMinute);
+    popstring(szHour);
+    popstring(szSeconds);
+    popstring(szMinutes);
+    popstring(szHours);
+    popstring(szProgress);
+    popstring(url);
     translation_version=2;
-  } else if (!lstrcmpiA(url, "/TRANSLATE")) {
-    PopStringA(szDownloading);
-    PopStringA(szConnecting);
-    PopStringA(szSecond);
-    PopStringA(szMinute);
-    PopStringA(szHour);
-    PopStringA(szPlural);
-    PopStringA(szProgress);
-    PopStringA(szRemaining);
-    PopStringA(url);
+  } else if (!lstrcmpi(url, "/TRANSLATE")) {
+    popstring(szDownloading);
+    popstring(szConnecting);
+    popstring(szSecond);
+    popstring(szMinute);
+    popstring(szHour);
+    popstring(szPlural);
+    popstring(szProgress);
+    popstring(szRemaining);
+    popstring(url);
     translation_version=1;
   } else {
-    lstrcpyA(szDownloading, "Downloading %s");
-    lstrcpyA(szConnecting, "Connecting ...");
-    lstrcpyA(szSecond, " (1 second remaining)");
-    lstrcpyA(szMinute, " (1 minute remaining)");
-    lstrcpyA(szHour, " (1 hour remaining)");
-    lstrcpyA(szSeconds, " (%u seconds remaining)");
-    lstrcpyA(szMinutes, " (%u minutes remaining)");
-    lstrcpyA(szHours, " (%u hours remaining)");
-    lstrcpyA(szProgress, "%skB (%d%%) of %skB at %u.%01ukB/s");
+    lstrcpy(szDownloading, "Downloading %s");
+    lstrcpy(szConnecting, "Connecting ...");
+    lstrcpy(szSecond, " (1 second remaining)");
+    lstrcpy(szMinute, " (1 minute remaining)");
+    lstrcpy(szHour, " (1 hour remaining)");
+    lstrcpy(szSeconds, " (%u seconds remaining)");
+    lstrcpy(szMinutes, " (%u minutes remaining)");
+    lstrcpy(szHours, " (%u hours remaining)");
+    lstrcpy(szProgress, "%skB (%d%%) of %skB at %u.%01ukB/s");
     translation_version=2;
   }
-  lstrcpynA(buf, url, 10);
-  if (!lstrcmpiA(buf, "/TIMEOUT=")) {
+  lstrcpyn(buf, url, 10);
+  if (!lstrcmpi(buf, "/TIMEOUT=")) {
     timeout_ms=my_atoi(url+9);
-    PopStringA(url);
+    popstring(url);
   }
-  if (!lstrcmpiA(url, "/PROXY")) {
+  if (!lstrcmpi(url, "/PROXY")) {
     getieproxy=0;
     manualproxy=1;
-    PopStringA(proxy);
-    PopStringA(url);
+    popstring(proxy);
+    popstring(url);
   }
-  if (!lstrcmpiA(url, "/NOIEPROXY")) {
+  if (!lstrcmpi(url, "/NOIEPROXY")) {
     getieproxy=0;
-    PopStringA(url);
+    popstring(url);
   }
-  popstring(filenameT);
+  popstring(filename);
 
-  static char main_buf[8192];
-  char *filenameA;
-#ifdef _UNICODE
-  filenameA = main_buf;
-  wsprintfA(filenameA, "%S", filenameT);
-#else
-  filenameA = filenameT;
-#endif
-
-  HANDLE hFile = CreateFile(filenameT,GENERIC_WRITE,FILE_SHARE_READ,NULL,CREATE_ALWAYS,0,NULL);
+  HANDLE hFile = CreateFile(filename,GENERIC_WRITE,FILE_SHARE_READ,NULL,CREATE_ALWAYS,0,NULL);
 
   if (hFile == INVALID_HANDLE_VALUE)
   {
-    wsprintfA(buf, "Unable to open %s", filenameA);
+    wsprintf(buf, "Unable to open %s", filename);
     error = buf;
   }
   else
   {
     if (parent)
     {
-      uMsgCreate = RegisterWindowMessage(_T("nsisdl create"));
+      uMsgCreate = RegisterWindowMessage("nsisdl create");
 
-      lpWndProcOld = (WNDPROC)SetWindowLongPtr(parent,GWLP_WNDPROC,(LONG_PTR)ParentWndProc);
+      lpWndProcOld = (void *)SetWindowLong(parent,GWL_WNDPROC,(long)ParentWndProc);
 
       SendMessage(parent, uMsgCreate, TRUE, (LPARAM) parent);
 
       // set initial text
-      char *p = filenameA;
+      char *p = filename;
       while (*p) p++;
-      while (*p !='\\' && p != filenameA) p = CharPrevA(filenameA, p);
-      wsprintfA(buf, szDownloading, p != filenameA ? p + 1 : p);
-      SetDlgItemTextA(childwnd, 1006, buf);
-      SetWindowTextA(g_hwndStatic, szConnecting);
+      while (*p != '\\' && p != filename) p = CharPrev(filename, p);
+      wsprintf(buf, szDownloading, p != filename ? p + 1 : p);
+      SetDlgItemText(childwnd, 1006, buf);
+      SetWindowText(g_hwndStatic, szConnecting);
     }
     {
       WSADATA wsaData;
@@ -367,18 +362,20 @@ __declspec(dllexport) void download (HWND   parent,
 
       JNL_HTTPGet *get = 0;
 
-      char *buf = main_buf, *p = NULL;
+      static char main_buf[8192];
+      char *buf=main_buf;
+      char *p=NULL;
 
       HKEY hKey;
-      if (getieproxy && RegOpenKeyExA(HKEY_CURRENT_USER,"Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings",0,KEY_READ,&hKey) == ERROR_SUCCESS)
+      if (getieproxy && RegOpenKeyEx(HKEY_CURRENT_USER,"Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings",0,KEY_READ,&hKey) == ERROR_SUCCESS)
       {
         DWORD l = 4;
         DWORD t;
         DWORD v;
-        if (RegQueryValueExA(hKey,"ProxyEnable",NULL,&t,(unsigned char*)&v,&l) == ERROR_SUCCESS && t == REG_DWORD && v)
+        if (RegQueryValueEx(hKey,"ProxyEnable",NULL,&t,(unsigned char *)&v,&l) == ERROR_SUCCESS && t == REG_DWORD && v)
         {
           l=8192;
-          if (RegQueryValueExA(hKey,"ProxyServer",NULL,&t,(unsigned char *)buf,&l ) == ERROR_SUCCESS && t == REG_SZ)
+          if (RegQueryValueEx(hKey,"ProxyServer",NULL,&t,(unsigned char *)buf,&l ) == ERROR_SUCCESS && t == REG_SZ)
           {
             p=strstr(buf,"http=");
             if (!p) p=buf;
@@ -421,7 +418,7 @@ __declspec(dllexport) void download (HWND   parent,
           if (parent)
           {
             SendMessage(parent, uMsgCreate, FALSE, (LPARAM) parent);
-            SetWindowLongPtr(parent, GWLP_WNDPROC, (LONG_PTR)lpWndProcOld);
+            SetWindowLong(parent, GWL_WNDPROC, (long)lpWndProcOld);
           }
           break;
         }
@@ -429,7 +426,7 @@ __declspec(dllexport) void download (HWND   parent,
         st = get->run ();
 
         if (st == -1) {
-          lstrcpynA(url, get->geterrorstr(), sizeof(url));
+          lstrcpyn(url, get->geterrorstr(), sizeof(url));
           error = url;
         } else if (st == 1) {
           if (sofar < cl || get->get_status () != 2)
@@ -504,14 +501,14 @@ __declspec(dllexport) void download (HWND   parent,
                   myitoa64(sofar/1024, sofar_str);
                   myitoa64(cl/1024, cl_str);
 
-                  wsprintfA (buf,
+                  wsprintf (buf,
                         szProgress, //%skB (%d%%) of %skB @ %u.%01ukB/s
                         sofar_str,
                         MulDiv64(100, sofar, cl),
                         cl_str,
                         bps/1024,((bps*10)/1024)%10
                         );
-                  if (remain) wsprintfA(buf+lstrlenA(buf),rtext,
+                  if (remain) wsprintf(buf+lstrlen(buf),rtext,
                         remain
                         );
                 } else if (translation_version == 1) {
@@ -527,14 +524,14 @@ __declspec(dllexport) void download (HWND   parent,
                     }
                   }
 
-                  wsprintfA (buf,
+                  wsprintf (buf,
                         szProgress, //%dkB (%d%%) of %dkB @ %d.%01dkB/s
                         int(sofar/1024),
                         MulDiv64(100, sofar, cl),
                         int(cl/1024),
                         bps/1024,((bps*10)/1024)%10
                         );
-                  if (remain) wsprintfA(buf+lstrlenA(buf),szRemaining,
+                  if (remain) wsprintf(buf+lstrlen(buf),szRemaining,
                         remain,
                         rtext,
                         remain==1?"":szPlural
@@ -581,16 +578,16 @@ __declspec(dllexport) void download (HWND   parent,
   }
 
   if (g_cancelled || !bSuccess) {
-    DeleteFile(filenameT);
+    DeleteFile(filename);
   }
 
-  PushStringA(error);
+  pushstring(error);
 }
 
 
 __declspec(dllexport) void download_quiet(HWND   parent,
               int    stringsize,
-              TCHAR   *variables,
+              char   *variables,
               stack_t **stacktop)
 {
   g_hwndProgressBar=0;

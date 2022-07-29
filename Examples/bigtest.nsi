@@ -36,7 +36,6 @@ LicenseText "A test text, make sure it's all there"
 LicenseData "bigtest.nsi"
 
 RequestExecutionLevel admin
-ManifestSupportedOS all
 
 ;--------------------------------
 
@@ -67,7 +66,7 @@ ShowInstDetails show
 Section "" ; empty string makes it hidden, so would starting with -
 
   ; write reg info
-  StrCpy $1 "Hello World"
+  StrCpy $1 "POOOOOOOOOOOP"
   DetailPrint "I like to be able to see what is going on (debug) $1"
   WriteRegStr HKLM SOFTWARE\NSISTest\BigNSISTest "Install_Dir" "$INSTDIR"
 
@@ -78,7 +77,7 @@ Section "" ; empty string makes it hidden, so would starting with -
   SetOutPath $INSTDIR
   File /a "silent.nsi"
   CreateDirectory "$INSTDIR\MyProjectFamily\MyProject" ; 2 recursively create a directory for fun.
-  WriteUninstaller "$INSTDIR\bt-uninst.exe"
+  WriteUninstaller "bt-uninst.exe"
   
   Nop ; for fun
 
@@ -139,7 +138,7 @@ SectionIn 1 4 3
   
 SectionEnd
 
-Section "Test CreateShortcut"
+Section "Test CreateShortCut"
 
   SectionIn 1 2 3
 
@@ -148,27 +147,6 @@ Section "Test CreateShortcut"
 SectionEnd
 
 SectionGroup Group2
-
-!define ASSERT `!insertmacro ASSERT "${U+24}{__FILE__}" ${U+24}{__LINE__} `
-!macro ASSERT __file __line __xpr
-${__xpr} +2
-MessageBox MB_ICONSTOP `ASSERT: ${__xpr} (${__file}:${__line})`
-!macroend
-
-Section "Integer"
-IntOp $0 0xffffffff >> 31
-${ASSERT} `IntCmpU $0 -1`
-IntOp $0 0xffffffff >>> 31
-${ASSERT} `IntCmpU $0 1`
-IntOp $0 1 << 31
-${ASSERT} `IntCmpU $0 0x80000000`
-IntOp $0 0x80000000 ^ 0x40000000
-${ASSERT} `IntCmpU $0 0xC0000000`
-ClearErrors
-IntOp $0 1 / 0
-${ASSERT} `IfErrors ` ; Division by zero must set the error flag
-${ASSERT} `IntCmpU $0 0` ; Unspecified result, hopefully it's zero
-SectionEnd
 
 Section "Test Branching" 
   
@@ -260,10 +238,10 @@ Function "CSCTest"
   
   CreateDirectory "$SMPROGRAMS\Big NSIS Test"
   SetOutPath $INSTDIR ; for working directory
-  CreateShortcut "$SMPROGRAMS\Big NSIS Test\Uninstall BIG NSIS Test.lnk" "$INSTDIR\bt-uninst.exe" ; use defaults for parameters, icon, etc.
+  CreateShortCut "$SMPROGRAMS\Big NSIS Test\Uninstall BIG NSIS Test.lnk" "$INSTDIR\bt-uninst.exe" ; use defaults for parameters, icon, etc.
   ; this one will use notepad's icon, start it minimized, and give it a hotkey (of Ctrl+Shift+Q)
-  CreateShortcut "$SMPROGRAMS\Big NSIS Test\silent.nsi.lnk" "$INSTDIR\silent.nsi" "" "$WINDIR\notepad.exe" 0 SW_SHOWMINIMIZED CONTROL|SHIFT|Q
-  CreateShortcut "$SMPROGRAMS\Big NSIS Test\TheDir.lnk" "$INSTDIR\" "" "" 0 SW_SHOWMAXIMIZED CONTROL|SHIFT|Z
+  CreateShortCut "$SMPROGRAMS\Big NSIS Test\silent.nsi.lnk" "$INSTDIR\silent.nsi" "" "$WINDIR\notepad.exe" 0 SW_SHOWMINIMIZED CONTROL|SHIFT|Q
+  CreateShortCut "$SMPROGRAMS\Big NSIS Test\TheDir.lnk" "$INSTDIR\" "" "" 0 SW_SHOWMAXIMIZED CONTROL|SHIFT|Z
 
 FunctionEnd
 

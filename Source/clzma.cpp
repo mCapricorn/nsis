@@ -3,7 +3,7 @@
  * 
  * This file is a part of NSIS.
  * 
- * Copyright (C) 1999-2022 Nullsoft and Contributors
+ * Copyright (C) 1999-2009 Nullsoft and Contributors
  * 
  * Licensed under the zlib/libpng license (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * 
  * This software is provided 'as-is', without any express or implied
  * warranty.
- *
- * Unicode support by Jim Park -- 08/24/2007
  */
 
 #include <algorithm> // for std::min
@@ -29,7 +27,7 @@ struct evnet_t
   bool signaled;
 };
 
-HANDLE CreateEvent(void *, BOOL, BOOL, TCHAR *)
+HANDLE CreateEvent(void *, BOOL, BOOL, char *)
 {
   evnet_t *event = (evnet_t *) malloc(sizeof(evnet_t));
   if (!event)
@@ -199,7 +197,7 @@ int CLZMA::Init(int level, unsigned int dicSize)
     NCoderPropID::kDictionarySize,
     NCoderPropID::kNumFastBytes
   };
-  const int kNumProps = COUNTOF(propdIDs);
+  const int kNumProps = sizeof(propdIDs) / sizeof(propdIDs[0]);
   PROPVARIANT props[kNumProps];
   // NCoderPropID::kAlgorithm
   props[0].vt = VT_UI4;
@@ -441,26 +439,26 @@ unsigned int CLZMA::GetAvailOut()
   return avail_out;
 }
 
-const TCHAR* CLZMA::GetName()
+const char* CLZMA::GetName()
 {
-  return _T("lzma");
+  return "lzma";
 }
 
-const TCHAR* CLZMA::GetErrStr(int err)
+const char* CLZMA::GetErrStr(int err)
 {
   switch (err)
   {
   case LZMA_BAD_CALL:
-    return _T("bad call");
+    return "bad call";
   case LZMA_INIT_ERROR:
-    return _T("initialization failed");
+    return "initialization failed";
   case LZMA_THREAD_ERROR:
-    return _T("thread synchronization error");
+    return "thread synchronization error";
   case LZMA_IO_ERROR:
-    return _T("input/output error");
+    return "input/output error";
   case LZMA_MEM_ERROR:
-    return _T("not enough memory");
+    return "not enough memory";
   default:
-    return _T("unknown error");
+    return "unknown error";
   }
 }

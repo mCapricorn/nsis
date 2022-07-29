@@ -36,10 +36,7 @@ includes = Split("""
 	nsDialogs.nsh
 """)
 
-Import('BuildPlugin env PerformPluginExtrasDistOperationOnce')
-
-unicodetarget = 'UNICODE' in env['CPPDEFINES']
+Import('BuildPlugin env')
 
 BuildPlugin(target, files, libs, examples, docs, res = resources)
-if PerformPluginExtrasDistOperationOnce(env, unicodetarget):
-	env.DistributeInclude(includes)
+env.DistributeInclude(includes)

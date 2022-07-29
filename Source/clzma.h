@@ -3,7 +3,7 @@
  * 
  * This file is a part of NSIS.
  * 
- * Copyright (C) 1999-2022 Nullsoft and Contributors
+ * Copyright (C) 1999-2009 Nullsoft and Contributors
  * 
  * Licensed under the zlib/libpng license (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * 
  * This software is provided 'as-is', without any express or implied
  * warranty.
- *
- * Unicode support by Jim Park -- 08/24/2007
  */
 
 #ifndef __CLZMA_H__
@@ -97,9 +95,9 @@ public:
   virtual char *GetNextOut();
   virtual unsigned int GetAvailIn();
   virtual unsigned int GetAvailOut();
-  virtual const TCHAR *GetName();
+  virtual const char *GetName();
 
-  virtual const TCHAR* GetErrStr(int err);
+  virtual const char* GetErrStr(int err);
 };
 
 #endif

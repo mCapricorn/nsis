@@ -22,8 +22,6 @@
 // 2. Altered source versions must be plainly marked as such, and must not be
 //    misrepresented as being the original software.
 // 3. This notice may not be removed or altered from any source distribution.
-//
-// Unicode support by Jim Park -- 08/29/2007
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -38,15 +36,15 @@ HINSTANCE g_hInstance;
 HWND g_hwndParent;
   
 void __declspec(dllexport) vpatchfile(HWND hwndParent, int string_size, 
-                                      TCHAR *variables, stack_t **stacktop) {
+                                      char *variables, stack_t **stacktop) {
   g_hwndParent=hwndParent;
 
   EXDLL_INIT();
 
   {
-    TCHAR source[MAX_PATH];
-    TCHAR dest[MAX_PATH];
-    TCHAR exename[MAX_PATH];
+    char source[MAX_PATH];
+    char dest[MAX_PATH];
+    char exename[MAX_PATH];
     HANDLE hPatch, hSource, hDest;
     int result;
 
@@ -57,7 +55,7 @@ void __declspec(dllexport) vpatchfile(HWND hwndParent, int string_size,
     hPatch = CreateFile(exename, GENERIC_READ, FILE_SHARE_READ, NULL,
                                         OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
     if (hPatch == INVALID_HANDLE_VALUE) {
-      pushstring(_T("Unable to open patch file"));
+      pushstring("Unable to open patch file");
       return;
     }
 
@@ -65,7 +63,7 @@ void __declspec(dllexport) vpatchfile(HWND hwndParent, int string_size,
                                         OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
     if (hSource == INVALID_HANDLE_VALUE) {
       CloseHandle(hPatch);
-      pushstring(_T("Unable to open source file"));
+      pushstring("Unable to open source file");
       return;
     }
     
@@ -74,7 +72,7 @@ void __declspec(dllexport) vpatchfile(HWND hwndParent, int string_size,
     if (hDest == INVALID_HANDLE_VALUE) {
       CloseHandle(hPatch);
       CloseHandle(hSource);
-      pushstring(_T("Unable to open output file"));
+      pushstring("Unable to open output file");
       return;
     }
         
@@ -86,16 +84,16 @@ void __declspec(dllexport) vpatchfile(HWND hwndParent, int string_size,
 
     if ((result != PATCH_SUCCESS)) {
       if (result == PATCH_ERROR)
-        pushstring(_T("An error occurred while patching"));
+        pushstring("An error occured while patching");
       else if (result == PATCH_CORRUPT)
-        pushstring(_T("Patch data is invalid or corrupt"));
+        pushstring("Patch data is invalid or corrupt");
       else if (result == PATCH_NOMATCH)
-        pushstring(_T("No suitable patches were found"));
+        pushstring("No suitable patches were found");
       else if (result == PATCH_UPTODATE)
-        pushstring(_T("OK, new version already installed"));
+        pushstring("OK, new version already installed");
       DeleteFile(dest);
     } else {
-      pushstring(_T("OK"));
+      pushstring("OK");
     }
 
     return;
@@ -104,13 +102,13 @@ void __declspec(dllexport) vpatchfile(HWND hwndParent, int string_size,
 
 #ifdef DLL_CHECKSUMS
 void __declspec(dllexport) GetFileCRC32(HWND hwndParent, int string_size, 
-                                      TCHAR *variables, stack_t **stacktop) {
+                                      char *variables, stack_t **stacktop) {
   g_hwndParent=hwndParent;
 
   EXDLL_INIT();
 
   {
-    TCHAR filename[MAX_PATH];
+    char filename[MAX_PATH];
     char crc_string[9];
     HANDLE hFile;
     unsigned long crc;
@@ -121,17 +119,17 @@ void __declspec(dllexport) GetFileCRC32(HWND hwndParent, int string_size,
                                         OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
     if (hFile == INVALID_HANDLE_VALUE) {
       //pushstring("ERROR: Unable to open file for CRC32 calculation");
-      pushstring(_T(""));
+      pushstring("");
       return;
     }
 
     if (!FileCRC(hFile, &crc)) {
       //pushstring("ERROR: Unable to calculate CRC32");
-      pushstring(_T(""));
+      pushstring("");
     } else {
       crc_string[8] = '\0';
       CRC32ToString(crc_string,crc);
-      PushStringA(crc_string);
+      pushstring(crc_string);
     }
 
     CloseHandle(hFile);
@@ -139,13 +137,13 @@ void __declspec(dllexport) GetFileCRC32(HWND hwndParent, int string_size,
 }
 
 void __declspec(dllexport) GetFileMD5(HWND hwndParent, int string_size, 
-                                      TCHAR *variables, stack_t **stacktop) {
+                                      char *variables, stack_t **stacktop) {
   g_hwndParent=hwndParent;
 
   EXDLL_INIT();
 
   {
-    TCHAR filename[MAX_PATH];
+    char filename[MAX_PATH];
     char md5_string[33];
     HANDLE hFile;
     md5_byte_t digest[16];
@@ -156,17 +154,17 @@ void __declspec(dllexport) GetFileMD5(HWND hwndParent, int string_size,
                                         OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
     if (hFile == INVALID_HANDLE_VALUE) {
       //pushstring("ERROR: Unable to open file for MD5 calculation");
-      pushstring(_T(""));
+      pushstring("");
       return;
     }
 
     if (!FileMD5(hFile, digest)) {
       //pushstring("ERROR: Unable to calculate MD5");
-      pushstring(_T(""));
+      pushstring("");
     } else {
       md5_string[32] = '\0';
       MD5ToString(md5_string,digest);
-      PushStringA(md5_string);
+      pushstring(md5_string);
     }
 
     CloseHandle(hFile);
@@ -174,7 +172,7 @@ void __declspec(dllexport) GetFileMD5(HWND hwndParent, int string_size,
 }
 #endif
 
-BOOL WINAPI DllMain(HINSTANCE hInst, ULONG ul_reason_for_call, LPVOID lpReserved) {
+BOOL WINAPI DllMain(HANDLE hInst, ULONG ul_reason_for_call, LPVOID lpReserved) {
   g_hInstance=hInst;
   return TRUE;
 }

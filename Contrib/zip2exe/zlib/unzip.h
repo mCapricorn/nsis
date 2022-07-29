@@ -32,10 +32,6 @@
      misrepresented as being the original software.
   3. This notice may not be removed or altered from any source distribution.
 
-  Unicode support by Jim Park -- 08/28/2007
-  (Support of the archive file name being Unicode but not the files in
-  the archive itself.  That requires modifying the ZLIB lib not just
-  here but the user's zlib-based tool.)
 
 */
 
@@ -54,7 +50,7 @@ extern "C" {
 #endif
 
 #ifndef _ZLIB_H
-#include <zlib.h>
+#include "zlib.h"
 #endif
 
 #ifndef _ZLIBIOAPI_H
@@ -128,15 +124,15 @@ extern int ZEXPORT unzStringFileNameCompare OF ((const char* fileName1,
                                                  int iCaseSensitivity));
 /*
    Compare two filename (fileName1,fileName2).
-   If iCaseSensitivity = 1, comparison is case sensitive (like strcmp)
-   If iCaseSensitivity = 2, comparison is not case sensitive (like strcmpi
+   If iCaseSenisivity = 1, comparision is case sensitivity (like strcmp)
+   If iCaseSenisivity = 2, comparision is not case sensitivity (like strcmpi
                                 or strcasecmp)
-   If iCaseSensitivity = 0, case sensitivity is the default from your 
-     operating system (like 1 on Unix, 2 on Windows)
+   If iCaseSenisivity = 0, case sensitivity is defaut of your operating system
+    (like 1 on Unix, 2 on Windows)
 */
 
 
-extern unzFile ZEXPORT unzOpen OF((const TCHAR *path));
+extern unzFile ZEXPORT unzOpen OF((const char *path));
 /*
   Open a Zip file. path contain the full pathname (by example,
      on a Windows XP computer "c:\\zlib\\zlib113.zip" or on an Unix computer
@@ -147,7 +143,7 @@ extern unzFile ZEXPORT unzOpen OF((const TCHAR *path));
        of this unzip package.
 */
 
-extern unzFile ZEXPORT unzOpen2 OF((const TCHAR *path,
+extern unzFile ZEXPORT unzOpen2 OF((const char *path,
                                     zlib_filefunc_def* pzlib_filefunc_def));
 /*
    Open a Zip file, like unzOpen, but provide a set of file low level API
@@ -237,7 +233,7 @@ extern int ZEXPORT unzGetCurrentFileInfo OF((unzFile file,
                          uLong commentBufferSize));
 /*
   Get Info about the current file
-  if pfile_info!=NULL, the *pfile_info structure will contain some info about
+  if pfile_info!=NULL, the *pfile_info structure will contain somes info about
         the current file
   if szFileName!=NULL, the filemane string will be copied in szFileName
             (fileNameBufferSize is the size of the buffer)
@@ -309,7 +305,7 @@ extern int ZEXPORT unzReadCurrentFile OF((unzFile file,
   buf contain buffer where data must be copied
   len the size of buf.
 
-  return the number of bytes copied if some bytes are copied
+  return the number of byte copied if somes bytes are copied
   return 0 if the end of file was reached
   return <0 with error code if there is an error
     (UNZ_ERRNO for IO error, or zLib error for uncompress error)

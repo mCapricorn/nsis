@@ -1,5 +1,4 @@
 ;# Copyright (c) 2008 Thomas Gaugler <thomas@dadie.net>
-;# Copyright (c) 2008-2022 NSIS Contributors
 ;#
 ;# Permission is hereby granted, free of charge, to any person
 ;# obtaining a copy of this software and associated documentation
@@ -88,11 +87,6 @@ IF 0
 .set SYSTEM_LOG_DEBUG,1
 #endif
 
-#ifdef _UNICODE
-#undef _UNICODE
-.set _UNICODE,1
-#endif
-
 #define IFDEF            .ifdef
 #define ELSE             .else
 #define ENDIF            .endif
@@ -105,7 +99,6 @@ IF 0
 #define DATA_SUFFIX      :
 #define BYTE             .byte
 #define DWORD            .int
-#define WORD             .word
 #define ASCII            .ascii
 
 #define MACRO_DECL       .macro
@@ -145,18 +138,15 @@ ENDIF
 
 EXTERN    __alloca_probe         : PROC
 
-EXTERN    __imp__GlobalFree@4    : PROC
-
-IFDEF _UNICODE
-EXTERN    __imp__wsprintfW       : PROC
-ELSE
+EXTERN	  __imp__GlobalFree@4    : PROC
+EXTERN    __imp__GetLastError@0  : PROC
 EXTERN    __imp__wsprintfA       : PROC
-ENDIF
 
 EXTERN    _GlobalCopy            : PROC
 
 EXTERN    _LastStackPlace        : DWORD
 EXTERN    _LastStackReal         : DWORD
+EXTERN    _LastError             : DWORD
 EXTERN    _LastProc              : DWORD
 EXTERN    _CallbackIndex         : DWORD
 
@@ -166,6 +156,7 @@ EXTERN    _retaddr               : PTR
 EXTERN    _GetNewStackSize       : PROC
 EXTERN    _GetGenStackOption     : PROC
 EXTERN    _GetCDeclOption        : PROC
+EXTERN    _GetErrorOption        : PROC
 EXTERN    _GetProcOffset         : PROC
 EXTERN    _GetCloneOffset        : PROC
 EXTERN    _GetProcNameOffset     : PROC
@@ -177,7 +168,7 @@ EXTERN    _GetSizeOffsetParam    : PROC
 EXTERN    _GetValueOffsetParam   : PROC
 EXTERN    _Get_valueOffsetParam  : PROC
 EXTERN    _SetCloneOption        : PROC
-EXTERN    _SetCallProcResultValues@12  : PROC
+EXTERN    _SetProcResultOk       : PROC
 EXTERN    _SetProcResultCallback : PROC
 
 SECTION_DATA
@@ -190,130 +181,54 @@ SECTION_DATA
 
 IFDEF SYSTEM_LOG_DEBUG
 
-  IFDEF _UNICODE
-    LogStack DATA_SUFFIX
-      BYTE '%', 0, 's', 0, ' ', 0, ' ', 0, 'E', 0, 'S', 0, 'P', 0, ' ', 0
-      BYTE ' ', 0, '0', 0, 'x', 0, '%', 0, '0', 0, '8', 0, 'X', 0, ' ', 0
-      BYTE 'S', 0, 't', 0, 'a', 0, 'c', 0, 'k', 0, ' ', 0, '=', 0, ' ', 0
-      BYTE 'x', 0, '%', 0, '0', 0, '8', 0, 'X', 0, ' ', 0, ' ', 0, 'R', 0
-      BYTE 'a', 0, 'l', 0, ' ', 0, '=', 0, ' ', 0, '0', 0, 'x', 0, '%', 0
-      BYTE '8', 0, 'X', 0
-      WORD 0
+  LogStack DATA_SUFFIX ASCII "%s  ESP = 0x%08X  Stack = 0x%08X  Real = 0x%08X"
+                 BYTE 0
 
-    LogCall DATA_SUFFIX WORD 9,9
-      BYTE 'C', 0, 'a', 0, 'l', 0, 'l', 0, ':', 0
-      WORD 10,0
+  LogCall DATA_SUFFIX  BYTE 9,9
+                 ASCII "Call:"
+                 BYTE 10,0
 
-    LogBeforeCall DATA_SUFFIX WORD 9,9,9
-      BYTE 'B', 0, 'e', 0, 'f', 0, 'o', 0, 'r', 0, 'e', 0, ' ', 0, 'c', 0
-      BYTE 'l', 0, 'l', 0, ' ', 0, ' ', 0, ' ', 0, ' ', 0, ' ', 0, ' ', 0
-      BYTE ' ', 0
-      WORD 0
+  LogBeforeCall DATA_SUFFIX BYTE 9,9,9
+                 ASCII "Before call        "
+                 BYTE 0
 
-    LogNearCall DATA_SUFFIX WORD 10,9,9,9
-      BYTE 'N', 0, 'e', 0, 'a', 0, 'r', 0, ' ', 0, 'c', 0, 'a', 0, 'l', 0
-      BYTE ' ', 0, ' ', 0, ' ', 0, ' ', 0, ' ', 0, ' ', 0, ' ', 0, ' ', 0
-      BYTE ' ', 0
-      WORD 0
+  LogNearCall DATA_SUFFIX BYTE 10,9,9,9
+                 ASCII "Near call          "
+                 BYTE 0
 
-    LogBackFrom DATA_SUFFIX WORD 9
-      BYTE 'B', 0, 'a', 0, 'c', 0, 'k', 0, ' ', 0, 'f', 0, 'r', 0, 'o', 0
-      BYTE ' ', 0
-      WORD 0
+  LogBackFrom DATA_SUFFIX BYTE 9
+                 ASCII "Back from "
+                 BYTE 0
 
-    LogAfterCall DATA_SUFFIX WORD 10,9,9,9
-      BYTE 'A', 0, 'f', 0, 't', 0, 'e', 0, 'r', 0, ' ', 0, 'c', 0, 'a', 0
-      BYTE 'l', 0, ' ', 0, ' ', 0, ' ', 0, ' ', 0, ' ', 0, ' ', 0, ' ', 0
-      BYTE ' ', 0
-      WORD 0
+  LogAfterCall DATA_SUFFIX BYTE 10,9,9,9
+                 ASCII "After call         "
+                 BYTE 0
 
-    LogReturnAfter DATA_SUFFIX WORD 10,9,9,9
-      BYTE 'R', 0, 'e', 0, 't', 0, 'u', 0, 'r', 0, 'n', 0, ' ', 0, ' ', 0
-      BYTE ' ', 0, ' ', 0, ' ', 0, ' ', 0, ' ', 0, ' ', 0, ' ', 0, ' ', 0
-      BYTE ' ', 0, ' ', 0, ' ', 0, '0', 0, 'x', 0, '%', 0, '0', 0, '8', 0
-      BYTE ' ', 0, ' ', 0, ' ', 0, ' ', 0, '0', 0, 'x', 0, '%', 0, '0', 0
-      BYTE 'X', 0
-      WORD 0
+  LogReturnAfter DATA_SUFFIX BYTE 10,9,9,9
+                 ASCII "Return               0x%08X    0x%08X"
+                 BYTE 0
 
-    LogCalled DATA_SUFFIX
-      BYTE 'C', 0, 'a', 0, 'l', 0, 'l', 0, 'e', 0, 'd', 0, ' ', 0, 'c', 0
-      BYTE 'l', 0, 'l', 0, 'b', 0, 'a', 0, 'c', 0, 'k', 0, ' ', 0, 'f', 0
-      BYTE 'o', 0, 'm', 0, ' ', 0
-      WORD 0
+  LogCalled DATA_SUFFIX ASCII "Called callback from "
+                 BYTE 0
 
-    LogShortAfter DATA_SUFFIX WORD 10,9,9,9
-      BYTE 'S', 0, 'h', 0, 'o', 0, 'r', 0, 't', 0, '-', 0, 'A', 0, 'f', 0
-      BYTE 'e', 0, 'r', 0, ' ', 0, 'c', 0, 'a', 0, 'l', 0, 'l', 0, ' ', 0
-      BYTE ' ', 0
-      WORD 0
+  LogShortAfter DATA_SUFFIX BYTE 10,9,9,9
+                 ASCII "Short-After call   "
+                 BYTE 0
 
-    LogReturn DATA_SUFFIX WORD 9,9
-      BYTE 'R', 0, 'e', 0, 't', 0, 'u', 0, 'r', 0, 'n', 0, ' ', 0, 'f', 0
-      BYTE 'o', 0, 'm', 0, ' ', 0, 'c', 0, 'a', 0, 'l', 0, 'l', 0, 'b', 0
-      BYTE 'c', 0, 'k', 0, ':', 0
-      WORD 10,0
+  LogReturn DATA_SUFFIX BYTE 9,9
+                 ASCII "Return from callback:"
+                 BYTE 10,0
 
-    LogBefore DATA_SUFFIX WORD 9,9,9
-      BYTE 'B', 0, 'e', 0, 'f', 0, 'o', 0, 'r', 0, 'e', 0, ' ', 0, 'c', 0
-      BYTE 'l', 0, 'l', 0, '-', 0, 'b', 0, 'a', 0, 'c', 0, 'k', 0, ' ', 0
-      BYTE ' ', 0
-      WORD 0
+  LogBefore DATA_SUFFIX BYTE 9,9,9
+                 ASCII "Before call-back   "
+                 BYTE 0
 
-    LogShortBefore DATA_SUFFIX WORD 10,9,9,9
-      BYTE 'S', 0, 'h', 0, '-', 0, 'B', 0, 'e', 0, 'f', 0, 'o', 0, 'r', 0
-      BYTE ' ', 0, 'c', 0, 'a', 0, 'l', 0, 'l', 0, '-', 0, 'b', 0, 'a', 0
-      BYTE 'k', 0
-      WORD 0
-    LogLF DATA_SUFFIX WORD 10,0
-  ELSE
-    LogStack DATA_SUFFIX ASCII "%s  ESP = 0x%08X  Stack = 0x%08X  Real = 0x%08X"
-                    BYTE 0
+  LogShortBefore DATA_SUFFIX BYTE 10,9,9,9
+                 ASCII "Sh-Before call-back"
+                 BYTE 0
 
-    LogCall DATA_SUFFIX  BYTE 9,9
-                    ASCII "Call:"
-                    BYTE 10,0
+  LogLF DATA_SUFFIX BYTE 10,0
 
-    LogBeforeCall DATA_SUFFIX BYTE 9,9,9
-                    ASCII "Before call        "
-                    BYTE 0
-
-    LogNearCall DATA_SUFFIX BYTE 10,9,9,9
-                    ASCII "Near call          "
-                    BYTE 0
-
-    LogBackFrom DATA_SUFFIX BYTE 9
-                    ASCII "Back from "
-                    BYTE 0
-
-    LogAfterCall DATA_SUFFIX BYTE 10,9,9,9
-                    ASCII "After call         "
-                    BYTE 0
-
-    LogReturnAfter DATA_SUFFIX BYTE 10,9,9,9
-                    ASCII "Return               0x%08X    0x%08X"
-                    BYTE 0
-
-    LogCalled DATA_SUFFIX ASCII "Called callback from "
-                    BYTE 0
-
-    LogShortAfter DATA_SUFFIX BYTE 10,9,9,9
-                    ASCII "Short-After call   "
-                    BYTE 0
-
-    LogReturn DATA_SUFFIX BYTE 9,9
-                    ASCII "Return from callback:"
-                    BYTE 10,0
-
-    LogBefore DATA_SUFFIX BYTE 9,9,9
-                    ASCII "Before call-back   "
-                    BYTE 0
-
-    LogShortBefore DATA_SUFFIX BYTE 10,9,9,9
-                    ASCII "Sh-Before call-back"
-                    BYTE 0
-
-    LogLF DATA_SUFFIX BYTE 10,0
-  ENDIF
 ENDIF
 
 SECTION_CODE
@@ -348,11 +263,7 @@ ELSE
 ENDIF
   ;# Log buffer
   push        edi
-IFDEF _UNICODE
-  call        dword ptr [__imp__wsprintfW]
-ELSE
   call        dword ptr [__imp__wsprintfA]
-ENDIF
   ;# If wsprintf succeeds then advance edi by number of bytes
   ;# written to buffer
   cmp         eax,0
@@ -460,7 +371,7 @@ stack_expand_done:
   cmp         eax,0
   jle         params_loop_done
 
-  ;# Save number of parameters on stack
+  ;# Save number of paramters on stack
   push        eax
 
   ;# Get offset for element Params of SystemProc structure
@@ -477,9 +388,9 @@ stack_expand_done:
   mul         ecx
   add         ebx,eax
 
-  ;# Save offset of last parameter on stack
+  ;# Save offset of last paramter on stack
   push        ebx
-  ;# Save number of parameters on stack
+  ;# Save number of paramters on stack
   push        ecx
 
   ;# Size offset of parameter
@@ -510,7 +421,7 @@ params_loop:
   cmp         dword ptr [eax+esi],2
   jne         params_default
 
-  ;# Long type 'L'/'l' (64-bit)
+  ;# Long type
   push        dword ptr [eax+ebx]
 
 params_default:
@@ -563,14 +474,14 @@ params_loop_done:
   ;# Call
   call        ecx
 
-  ;# Save return
+  ;# Return
   mov         dword ptr [_z1],eax
   mov         dword ptr [_z2],edx
 
   IFDEF SYSTEM_LOG_DEBUG
     SYSTEM_LOG_INIT
     SYSTEM_LOG_ADD offset LogBackFrom
-    ;# LastProc->ProcName
+    ;# LastProc->ProcName	
     call        _GetProcNameOffset
     mov         ecx,dword ptr [_LastProc]
     add         eax,ecx
@@ -655,7 +566,7 @@ stack_restore_done:
   pop         esi
   ;# eax = offset of current worked on parameter
   pop         eax
-  ;# ecx = n-th parameter
+  ;# ecx = n-th paramter
   pop         ecx
 
 temp_stack_loop:
@@ -679,7 +590,7 @@ real_stack_cleanup:
   pop         esi
   ;# eax = offset of current worked on parameter
   pop         eax
-  ;# ecx = Number of parameters
+  ;# ecx = Number of paramters
   pop         ecx
 
 real_stack_loop:
@@ -704,11 +615,34 @@ stack_clear_done:
 stack_cleanup_done:
 
   ;# Save return
-  push        dword ptr [_z2]
-  push        dword ptr [_z1]
-  push        dword ptr [ebp+8]
-  call        _SetCallProcResultValues@12
 
+  ;# Get offset for element Params of SystemProc structure
+  call        _GetParamsOffset
+  mov         edx,dword ptr [ebp+8]
+  add         edx,eax
+
+  ;# proc->Params[0].Value = Low double word of result
+  call        _GetValueOffsetParam
+  mov         ecx,dword ptr [_z1]
+  mov         dword ptr [edx+eax],ecx
+
+  ;# proc->Params[0]._value = High double word of result
+  call        _Get_valueOffsetParam
+  mov         ecx,dword ptr [_z2]
+  mov         dword ptr [edx+eax],ecx
+
+  ;# Proc result: OK
+  push        dword ptr [ebp+8]
+  call        _SetProcResultOk
+  ;# In case of POPT_ERROR -> Get_LastError
+  call        _GetErrorOption
+  cmp         eax,0
+  pop         eax
+  je          handling_error_option_done
+  call        dword ptr [__imp__GetLastError@0]
+  mov         dword ptr [_LastError],eax
+
+handling_error_option_done:
   IFDEF SYSTEM_LOG_DEBUG
     SYSTEM_EVENT offset LogAfterCall
 
@@ -756,7 +690,7 @@ FUNC_DECL _RealCallBack
   mov         dword ptr [ebp-8],ebp
   add         dword ptr [ebp-8],8
 
-  ;# Our callback proc is in eax (set by the thunk created in CreateCallback)
+  ;# Our callback proc
   mov         dword ptr [ebp-4],eax
 
   IFDEF SYSTEM_LOG_DEBUG
@@ -972,7 +906,7 @@ FUNC_DECL _CallBack
   pop         edx
   jne         _retexpr_stdcall
   ;# retexpr[1] = proc->ArgsSize
-  call        _GetArgsSizeOffset
+  call        _GetArgsSizeOffset	
   mov         ecx,dword ptr [ebp+8]
   mov         al,byte ptr [ecx+eax]
   mov         byte ptr [_retexpr+1],al

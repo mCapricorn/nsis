@@ -4,9 +4,6 @@
    Copyright (C) 1998-2005 Gilles Vollant
 
    Read unzip.h for more info
-
-   Unicode support by Jim Park -- 08/28/2007
-   (Unicode ZIP file name, but not the files in the archive itself.)
 */
 
 /* Decryption code comes from crypt.c by Info-ZIP but has been greatly reduced in terms of
@@ -41,7 +38,7 @@ woven in by Terry Thorsen 1/2003.
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <zlib.h>
+#include "zlib.h"
 #include "unzip.h"
 
 #ifdef STDC
@@ -150,7 +147,7 @@ typedef struct
     int encrypted;
 #    ifndef NOUNCRYPT
     unsigned long keys[3];     /* keys defining the pseudo-random sequence */
-    const z_crc_t FAR *pcrc_32_tab;
+    const unsigned long* pcrc_32_tab;
 #    endif
 } unz_s;
 
@@ -162,7 +159,7 @@ typedef struct
 /* ===========================================================================
      Read a byte from a gz_stream; update next_in and avail_in. Return EOF
    for end of file.
-   IN assertion: the stream s has been successfully opened for reading.
+   IN assertion: the stream s has been sucessfully opened for reading.
 */
 
 
@@ -298,11 +295,11 @@ local int strcmpcasenosensitive_internal (fileName1,fileName2)
 
 /*
    Compare two filename (fileName1,fileName2).
-   If iCaseSensitivity = 1, comparison is case sensitive (like strcmp)
-   If iCaseSensitivity = 2, comparison is not case sensitive (like strcmpi
+   If iCaseSenisivity = 1, comparision is case sensitivity (like strcmp)
+   If iCaseSenisivity = 2, comparision is not case sensitivity (like strcmpi
                                                                 or strcasecmp)
-   If iCaseSensitivity = 0, case sensitivity is the default from your 
-     operating system (like 1 on Unix, 2 on Windows)
+   If iCaseSenisivity = 0, case sensitivity is defaut of your operating system
+        (like 1 on Unix, 2 on Windows)
 
 */
 extern int ZEXPORT unzStringFileNameCompare (fileName1,fileName2,iCaseSensitivity)
@@ -398,7 +395,7 @@ local uLong unzlocal_SearchCentralDir(pzlib_filefunc_def,filestream)
        of this unzip package.
 */
 extern unzFile ZEXPORT unzOpen2 (path, pzlib_filefunc_def)
-    const TCHAR *path;
+    const char *path;
     zlib_filefunc_def* pzlib_filefunc_def;
 {
     unz_s us;
@@ -406,9 +403,9 @@ extern unzFile ZEXPORT unzOpen2 (path, pzlib_filefunc_def)
     uLong central_pos,uL;
 
     uLong number_disk;          /* number of the current dist, used for
-                                   spanning ZIP, unsupported, always 0*/
+                                   spaning ZIP, unsupported, always 0*/
     uLong number_disk_with_CD;  /* number the the disk with central dir, used
-                                   for spanning ZIP, unsupported, always 0*/
+                                   for spaning ZIP, unsupported, always 0*/
     uLong number_entry_CD;      /* total number of entries in
                                    the central dir
                                    (same than number_entry on nospan) */
@@ -501,7 +498,7 @@ extern unzFile ZEXPORT unzOpen2 (path, pzlib_filefunc_def)
 
 
 extern unzFile ZEXPORT unzOpen (path)
-    const TCHAR *path;
+    const char *path;
 {
     return unzOpen2(path, NULL);
 }
@@ -514,9 +511,10 @@ extern unzFile ZEXPORT unzOpen (path)
 extern int ZEXPORT unzClose (file)
     unzFile file;
 {
-    unz_s* s = (unz_s*) file;
-    if (!s)
+    unz_s* s;
+    if (file==NULL)
         return UNZ_PARAMERROR;
+    s=(unz_s*)file;
 
     if (s->pfile_in_zip_read!=NULL)
         unzCloseCurrentFile(file);
@@ -610,12 +608,10 @@ local int unzlocal_GetCurrentFileInfoInternal (file,
 
     /* we check the magic */
     if (err==UNZ_OK)
-    {
         if (unzlocal_getLong(&s->z_filefunc, s->filestream,&uMagic) != UNZ_OK)
             err=UNZ_ERRNO;
         else if (uMagic!=0x02014b50)
             err=UNZ_BADZIPFILE;
-    }
 
     if (unzlocal_getShort(&s->z_filefunc, s->filestream,&file_info.version) != UNZ_OK)
         err=UNZ_ERRNO;
@@ -692,12 +688,10 @@ local int unzlocal_GetCurrentFileInfoInternal (file,
             uSizeRead = extraFieldBufferSize;
 
         if (lSeek!=0)
-        {
             if (ZSEEK(s->z_filefunc, s->filestream,lSeek,ZLIB_FILEFUNC_SEEK_CUR)==0)
                 lSeek=0;
             else
                 err=UNZ_ERRNO;
-        }
         if ((file_info.size_file_extra>0) && (extraFieldBufferSize>0))
             if (ZREAD(s->z_filefunc, s->filestream,extraField,uSizeRead)!=uSizeRead)
                 err=UNZ_ERRNO;
@@ -719,12 +713,10 @@ local int unzlocal_GetCurrentFileInfoInternal (file,
             uSizeRead = commentBufferSize;
 
         if (lSeek!=0)
-        {
             if (ZSEEK(s->z_filefunc, s->filestream,lSeek,ZLIB_FILEFUNC_SEEK_CUR)==0)
                 lSeek=0;
             else
                 err=UNZ_ERRNO;
-        }
         if ((file_info.size_file_comment>0) && (commentBufferSize>0))
             if (ZREAD(s->z_filefunc, s->filestream,szComment,uSizeRead)!=uSizeRead)
                 err=UNZ_ERRNO;
@@ -985,12 +977,11 @@ local int unzlocal_CheckCurrentFileCoherencyHeader (s,piSizeVar,
 
 
     if (err==UNZ_OK)
-    {
         if (unzlocal_getLong(&s->z_filefunc, s->filestream,&uMagic) != UNZ_OK)
             err=UNZ_ERRNO;
         else if (uMagic!=0x04034b50)
             err=UNZ_BADZIPFILE;
-    }
+
     if (unzlocal_getShort(&s->z_filefunc, s->filestream,&uData) != UNZ_OK)
         err=UNZ_ERRNO;
 /*
@@ -1225,7 +1216,7 @@ extern int ZEXPORT unzOpenCurrentFile2 (file,method,level,raw)
   buf contain buffer where data must be copied
   len the size of buf.
 
-  return the number of bytes copied if some bytes are copied
+  return the number of byte copied if somes bytes are copied
   return 0 if the end of file was reached
   return <0 with error code if there is an error
     (UNZ_ERRNO for IO error, or zLib error for uncompress error)
@@ -1543,7 +1534,7 @@ extern int ZEXPORT unzGetGlobalComment (file, szComment, uSizeBuf)
     char *szComment;
     uLong uSizeBuf;
 {
-    // int err=UNZ_OK;
+    int err=UNZ_OK;
     unz_s* s;
     uLong uReadThis ;
     if (file==NULL)

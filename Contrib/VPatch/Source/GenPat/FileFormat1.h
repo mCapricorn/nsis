@@ -22,8 +22,6 @@
 // 2. Altered source versions must be plainly marked as such, and must not be
 //    misrepresented as being the original software.
 // 3. This notice may not be removed or altered from any source distribution.
-//
-// Reviewed for Unicode support by Jim Park -- 08/29/2007
 
 #if !defined(FileFormat1_H)
   #define FileFormat1_H
@@ -36,7 +34,7 @@
   using namespace std;
 
   namespace FileFormat1 {
-    TFileOffset removeExistingPatch(bistream& in, TFileOffset inSize, bostream& out, TChecksum* removeCRC, bool existenceIsError);
+    TFileOffset removeExistingPatch(bistream& in, TFileOffset inSize, bostream& out, TChecksum* removeCRC, bool existanceIsError);
     void writePatch(bostream& patch, bistream& target, vector<SameBlock*>& sameBlocks, TChecksum* sourceCRC, TChecksum* targetCRC, TFileOffset currentFileCount, POSIX::ALT_FILETIME targetTime);
   }
 

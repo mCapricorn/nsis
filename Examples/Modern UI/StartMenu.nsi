@@ -13,7 +13,6 @@
   ;Name and file
   Name "Modern UI Test"
   OutFile "StartMenu.exe"
-  Unicode True
 
   ;Default installation folder
   InstallDir "$LOCALAPPDATA\Modern UI Test"
@@ -77,7 +76,7 @@ Section "Dummy Section" SecDummy
     
     ;Create shortcuts
     CreateDirectory "$SMPROGRAMS\$StartMenuFolder"
-    CreateShortcut "$SMPROGRAMS\$StartMenuFolder\Uninstall.lnk" "$INSTDIR\Uninstall.exe"
+    CreateShortCut "$SMPROGRAMS\$StartMenuFolder\Uninstall.lnk" "$INSTDIR\Uninstall.exe"
   
   !insertmacro MUI_STARTMENU_WRITE_END
 

@@ -40,11 +40,11 @@ Section
 	StrCmp $R1 ">" skip
 
 		CreateDirectory $SMPROGRAMS\$R0
-		CreateShortcut $SMPROGRAMS\$R0\MakeNSISw.lnk $INSTDIR\makensisw.exe
+		CreateShortCut $SMPROGRAMS\$R0\MakeNSISw.lnk $INSTDIR\makensisw.exe
 
 		SetShellVarContext All
 		CreateDirectory $SMPROGRAMS\$R0
-		CreateShortcut "$SMPROGRAMS\$R0\All users MakeNSISw.lnk" $INSTDIR\makensisw.exe
+		CreateShortCut "$SMPROGRAMS\$R0\All users MakeNSISw.lnk" $INSTDIR\makensisw.exe
 
 	skip:
 SectionEnd
